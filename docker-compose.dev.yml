@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  db:
+    image: postgres:16-alpine
+    container_name: solvex-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-solvex_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - solvex-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application - Development Mode
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: solvex-dev-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.dev
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-solvex_dev}
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - solvex-dev-network
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Exclude node_modules and .next from mount
+      - /app/node_modules
+      - /app/.next
+    command: bun run dev
+
+networks:
+  solvex-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:

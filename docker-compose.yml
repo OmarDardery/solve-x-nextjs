@@ -1,0 +1,51 @@
+version: '3.8'
+
+# Production Docker Compose
+# For self-hosted deployments (not needed for Vercel)
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: solvex-prod-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - solvex-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Next.js Application - Production
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: solvex-prod-app
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.prod
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - solvex-prod-network
+
+networks:
+  solvex-prod-network:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
