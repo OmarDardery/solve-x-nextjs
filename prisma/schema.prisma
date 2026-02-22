@@ -1,0 +1,205 @@
+// Prisma Schema for SolveX
+// Migrated from Go/GORM models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== USER MODELS ====================
+
+model Student {
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+  firstName           String
+  lastName            String
+  email               String    @unique
+  password            String
+  lastChangedPassword DateTime  @default(now())
+
+  // Relations
+  tags          Tag[]          @relation("StudentTags")
+  coins         Coins?
+  applications  Application[]
+  reports       WeeklyReport[]
+
+  @@map("students")
+}
+
+model Professor {
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+  firstName           String
+  lastName            String
+  email               String    @unique
+  password            String
+  lastChangedPassword DateTime  @default(now())
+
+  // Relations
+  opportunities    Opportunity[]
+  receivedReports  WeeklyReport[] @relation("ReportRecipient")
+
+  @@map("professors")
+}
+
+model Organization {
+  id                  Int       @id @default(autoincrement())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+  name                String
+  email               String    @unique
+  password            String
+  contact             String?
+  link                String?
+  lastChangedPassword DateTime  @default(now())
+
+  // Relations
+  events Event[]
+
+  @@map("organizations")
+}
+
+// ==================== FEATURE MODELS ====================
+
+model Tag {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  name        String    @unique
+  description String?
+
+  // Relations
+  students      Student[]     @relation("StudentTags")
+  opportunities Opportunity[] @relation("OpportunityTags")
+
+  @@map("tags")
+}
+
+model Coins {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  amount    Int       @default(0)
+  studentId Int       @unique
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("coins")
+}
+
+model Opportunity {
+  id           Int       @id @default(autoincrement())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  professorId  Int
+  professor    Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  name         String
+  details      String?   @db.Text
+  requirements String?   @db.Text
+  reward       String?   @db.Text
+  type         OpportunityType
+
+  // Relations
+  tags         Tag[]         @relation("OpportunityTags")
+  applications Application[]
+
+  @@map("opportunities")
+}
+
+enum OpportunityType {
+  research
+  project
+  internship
+}
+
+model Application {
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  studentId     Int
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  opportunityId Int
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  message       String?     @db.Text
+  resumeLink    String?
+  status        ApplicationStatus @default(pending)
+
+  @@unique([studentId, opportunityId])
+  @@map("applications")
+}
+
+enum ApplicationStatus {
+  pending
+  accepted
+  rejected
+}
+
+model Event {
+  id             Int          @id @default(autoincrement())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  title          String
+  description    String?      @db.Text
+  date           String?
+  link           String?
+  signUpLink     String?
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model WeeklyReport {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recipientId Int
+  recipient   Professor @relation("ReportRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  driveLink   String
+
+  @@map("weekly_reports")
+}
+
+model Notification {
+  id            Int              @id @default(autoincrement())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+  recipientId   Int
+  recipientRole RecipientRole
+  title         String
+  message       String           @db.Text
+  type          NotificationType @default(info)
+  read          Boolean          @default(false)
+  readAt        DateTime?
+
+  @@index([recipientId, recipientRole])
+  @@map("notifications")
+}
+
+enum RecipientRole {
+  student
+  professor
+}
+
+enum NotificationType {
+  info
+  success
+  warning
+  error
+}
