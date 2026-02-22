@@ -1,0 +1,10 @@
+POST http://127.0.0.1:8000/auth/sign-up/student
+Content-Type: application/json
+
+{
+    "code": 466048,
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "omar71creatorcodefortnite@gmail.com",
+    "password": "securepassword"
+}

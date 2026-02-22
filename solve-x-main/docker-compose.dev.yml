@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  db:
+    image: postgres:16-alpine
+    container_name: solvex-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-solvex_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - solvex-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service - Development Mode
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: solvex-dev-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.dev.back
+    environment:
+      - PORT=8000
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - solvex-dev-network
+    volumes:
+      - ./backend:/app
+      - /app/tmp
+    command: go run main.go
+
+  # Frontend Service - Development Mode
+  frontend:
+    image: node:20-alpine
+    container_name: solvex-dev-frontend
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.dev.front
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - solvex-dev-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host"
+
+networks:
+  solvex-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:

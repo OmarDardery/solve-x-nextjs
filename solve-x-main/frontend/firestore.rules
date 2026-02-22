@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Allow authenticated users to read any user document
+      allow read: if request.auth != null;
+      
+      // Allow users to create their own document (for signup)
+      // The userId in the path must match the authenticated user's UID
+      allow create: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.data.keys().hasAll(['email', 'role', 'createdAt']);
+      
+      // Allow users to update their own document
+      allow update: if request.auth != null && 
+                     request.auth.uid == userId;
+      
+      // Allow users to delete their own document
+      allow delete: if request.auth != null && 
+                     request.auth.uid == userId;
+    }
+    
+    // Projects collection (Professor/TA projects)
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        (getUserRole() == 'professor' || getUserRole() == 'ta');
+      allow update: if isAuthenticated() && 
+        (getUserRole() == 'professor' || getUserRole() == 'ta') &&
+        resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        (getUserRole() == 'professor' || getUserRole() == 'ta') &&
+        resource.data.createdBy == request.auth.uid;
+    }
+    
+    // Student projects collection
+    match /studentProjects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && getUserRole() == 'student';
+      allow update: if isAuthenticated() && 
+        getUserRole() == 'student' &&
+        resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        getUserRole() == 'student' &&
+        resource.data.createdBy == request.auth.uid;
+    }
+    
+    // Opportunities collection (Organization opportunities)
+    match /opportunities/{opportunityId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && getUserRole() == 'organization_representative';
+      allow update: if isAuthenticated() && 
+        getUserRole() == 'organization_representative' &&
+        resource.data.organizationId == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        getUserRole() == 'organization_representative' &&
+        resource.data.organizationId == request.auth.uid;
+    }
+    
+    // Applications collection
+    match /applications/{applicationId} {
+      allow read: if isAuthenticated() && (
+        // Students can read their own applications
+        resource.data.studentId == request.auth.uid ||
+        // Professors/TAs can read applications to their projects
+        getUserRole() == 'professor' ||
+        getUserRole() == 'ta' ||
+        // Organizations can read applications to their opportunities
+        getUserRole() == 'organization_representative'
+      );
+      allow create: if isAuthenticated() && getUserRole() == 'student';
+      allow update: if isAuthenticated() && (
+        // Students can update their own pending applications
+        (getUserRole() == 'student' && 
+         resource.data.studentId == request.auth.uid &&
+         resource.data.status == 'pending') ||
+        // Professors/TAs/Organizations can update status
+        (getUserRole() == 'professor' || 
+         getUserRole() == 'ta' || 
+         getUserRole() == 'organization_representative')
+      );
+      allow delete: if isAuthenticated() && 
+        getUserRole() == 'student' &&
+        resource.data.studentId == request.auth.uid;
+    }
+    
+    // Weekly reports collection
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        // Students can read their own reports
+        resource.data.studentId == request.auth.uid ||
+        // Professors/TAs can read all reports
+        getUserRole() == 'professor' ||
+        getUserRole() == 'ta'
+      );
+      allow create: if isAuthenticated() && getUserRole() == 'student';
+      allow update: if isAuthenticated() && 
+        getUserRole() == 'student' &&
+        resource.data.studentId == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        getUserRole() == 'student' &&
+        resource.data.studentId == request.auth.uid;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
+
+

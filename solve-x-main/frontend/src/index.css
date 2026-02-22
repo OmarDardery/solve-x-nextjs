@@ -1,0 +1,435 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   SOLVEX THEME SYSTEM
+   Using CSS Variables for Light/Dark Mode
+   ======================================== */
+
+:root {
+  /* Background Colors */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  
+  /* Text Colors */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  
+  /* Brand Colors */
+  --brand-dark: #011c8d;
+  --brand-medium: #1329b3;
+  --brand-primary: #643ae6;
+  --brand-light: #a15df2;
+  
+  /* UI Colors */
+  --border-color: #e2e8f0;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --nav-bg: #ffffff;
+  --nav-border: #e2e8f0;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-focus: #643ae6;
+  
+  /* Button Colors */
+  --btn-primary-bg: linear-gradient(135deg, #011c8d 0%, #643ae6 100%);
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-text: #1329b3;
+  --btn-secondary-border: #1329b3;
+  --btn-ghost-text: #475569;
+  --btn-ghost-hover: #f1f5f9;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  
+  /* Status Colors */
+  --success-bg: #dcfce7;
+  --success-text: #166534;
+  --warning-bg: #fef3c7;
+  --warning-text: #92400e;
+  --error-bg: #fee2e2;
+  --error-text: #991b1b;
+  --info-bg: #dbeafe;
+  --info-text: #1e40af;
+}
+
+/* Dark Mode Variables */
+.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+  
+  --border-color: #334155;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --nav-bg: #1e293b;
+  --nav-border: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --input-focus: #a15df2;
+  
+  --btn-primary-bg: linear-gradient(135deg, #643ae6 0%, #a15df2 100%);
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: #1e293b;
+  --btn-secondary-text: #a15df2;
+  --btn-secondary-border: #a15df2;
+  --btn-ghost-text: #cbd5e1;
+  --btn-ghost-hover: #334155;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  
+  --success-bg: #14532d;
+  --success-text: #86efac;
+  --warning-bg: #78350f;
+  --warning-text: #fcd34d;
+  --error-bg: #7f1d1d;
+  --error-text: #fca5a5;
+  --info-bg: #1e3a8a;
+  --info-text: #93c5fd;
+  
+  color-scheme: dark;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ========================================
+   REUSABLE COMPONENT CLASSES
+   ======================================== */
+
+/* Page Background */
+.page-bg {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* Auth Page Background (gradient) */
+.auth-bg {
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+/* Brand Gradient Background */
+.bg-gradient-brand {
+  background: linear-gradient(135deg, #011c8d 0%, #643ae6 100%);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.navbar-link {
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.navbar-link:hover {
+  color: var(--brand-primary);
+}
+
+/* Cards */
+.card {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 2px solid var(--btn-secondary-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--btn-ghost-text);
+  border: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--btn-ghost-hover);
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+/* Inputs */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px rgba(100, 58, 230, 0.1);
+}
+
+.input-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Text Styles */
+.text-heading {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.text-body {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-brand {
+  color: var(--brand-primary);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-default {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.badge-primary {
+  background-color: rgba(100, 58, 230, 0.1);
+  color: var(--brand-primary);
+}
+
+.badge-success {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
+.badge-warning {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.badge-danger {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+}
+
+/* Modal */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Alert/Info Boxes */
+.alert-info {
+  background-color: var(--info-bg);
+  color: var(--info-text);
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.alert-success {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.alert-warning {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.alert-error {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Dividers */
+.divider {
+  border-color: var(--border-color);
+}
+
+/* Border Utilities */
+.border-default {
+  border-color: var(--border-color);
+}
+
+.border-brand {
+  border-color: var(--brand-primary);
+}
+
+.border-brand-hover:hover {
+  border-color: var(--brand-light);
+}
+
+/* Background Utilities */
+.bg-brand-light {
+  background-color: rgba(100, 58, 230, 0.1);
+}
+
+.dark .bg-brand-light {
+  background-color: rgba(161, 93, 242, 0.2);
+}
+
+.bg-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.hover\:bg-tertiary:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Role Selection Card */
+.role-card {
+  background-color: var(--card-bg);
+  transition: all 0.2s ease;
+}
+
+.role-card:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Icon Colors */
+.icon-primary {
+  color: var(--brand-primary);
+}
+
+.icon-muted {
+  color: var(--text-muted);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--text-muted);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--brand-primary);
+  color: var(--text-inverse);
+}

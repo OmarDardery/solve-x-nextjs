@@ -1,0 +1,24 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+tmp/
+
+# Test files
+*_test.go
+tests/
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# OS
+.DS_Store
+
+# Git
+.git
+.gitignore

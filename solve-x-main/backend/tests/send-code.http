@@ -1,0 +1,6 @@
+POST http://127.0.0.1:8000/auth/send-code
+Content-Type: application/json
+
+{
+    "email": "omar71creatorcodefortnite@gmail.com"
+}
