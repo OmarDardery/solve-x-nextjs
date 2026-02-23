@@ -7,7 +7,7 @@ type Props = {
 };
 
 // PUT /api/notifications/:id/read - Mark notification as read
-export async function PUT(request: Request, { params }: Props) {
+export async function PUT(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

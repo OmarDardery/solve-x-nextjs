@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllOpportunities, getOpportunityById } from "@/lib/services/opportunity";
+import { getAllOpportunities } from "@/lib/services/opportunity";
 
 export async function GET() {
   try {

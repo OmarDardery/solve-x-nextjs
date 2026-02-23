@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Badge } from "@/components/ui/Badge";
 import { USER_ROLES } from "@/lib/types";
 
 interface NavItem {

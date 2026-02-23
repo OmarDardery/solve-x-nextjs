@@ -7,7 +7,7 @@ type Props = {
 };
 
 // DELETE /api/reports/:id - Delete report (student only, own reports)
-export async function DELETE(request: Request, { params }: Props) {
+export async function DELETE(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

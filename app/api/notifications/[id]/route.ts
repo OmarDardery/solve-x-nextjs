@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { markNotificationAsRead, deleteNotification } from "@/lib/services/notification";
+import { deleteNotification } from "@/lib/services/notification";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 // DELETE /api/notifications/:id - Delete notification
-export async function DELETE(request: Request, { params }: Props) {
+export async function DELETE(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

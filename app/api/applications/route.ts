@@ -3,8 +3,6 @@ import { auth } from "@/lib/auth";
 import {
   createApplication,
   deleteApplication,
-  getApplicationsByStudentId,
-  getApplicationsByProfessorOpportunities,
 } from "@/lib/services/application";
 import { getOpportunityById } from "@/lib/services/opportunity";
 

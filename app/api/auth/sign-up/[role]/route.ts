@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: Props) {
       await createOrganization(name, email, password, contact, link);
 
       // Sign in and get session
-      const result = await signIn("credentials", {
+      await signIn("credentials", {
         email,
         password,
         role: "organization",

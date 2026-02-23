@@ -11,7 +11,7 @@ type Props = {
 };
 
 // GET /api/opportunities/:id
-export async function GET(request: Request, { params }: Props) {
+export async function GET(_request: Request, { params }: Props) {
   try {
     const { id } = await params;
     const opportunity = await getOpportunityById(BigInt(id));
@@ -63,7 +63,7 @@ export async function PUT(request: Request, { params }: Props) {
 }
 
 // DELETE /api/opportunities/:id - Delete opportunity (professor only)
-export async function DELETE(request: Request, { params }: Props) {
+export async function DELETE(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

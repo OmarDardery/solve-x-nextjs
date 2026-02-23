@@ -7,7 +7,7 @@ type ApplicationWithRelations = Awaited<ReturnType<typeof getApplicationsByOppor
 
 // GET /api/opportunities/[id]/applications - Get applications for an opportunity
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

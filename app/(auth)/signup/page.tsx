@@ -29,7 +29,7 @@ function SignupContent() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [codeSent, setCodeSent] = useState(false);
+  const [_codeSent, setCodeSent] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -62,6 +62,7 @@ function SignupContent() {
       }, 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [showSuccessModal, router, formData.role]);
 
   const getIdentifierPlaceholder = () => {

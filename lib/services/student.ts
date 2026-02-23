@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { hashPassword, checkPasswordHash, generateJWT } from "./auth";
-import { createCoins } from "./coins";
 
 /**
  * Create a new student with associated coins record

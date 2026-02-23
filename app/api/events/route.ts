@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createEvent, getEventsByOrganizationId } from "@/lib/services/event";
+import { createEvent } from "@/lib/services/event";
 
 // POST /api/events - Create new event (organization only)
 export async function POST(request: Request) {

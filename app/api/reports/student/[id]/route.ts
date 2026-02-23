@@ -7,7 +7,7 @@ type Props = {
 };
 
 // GET /api/reports/student/:id - Get reports by student (professor only)
-export async function GET(request: Request, { params }: Props) {
+export async function GET(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

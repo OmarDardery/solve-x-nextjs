@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth, getCurrentUser } from "@/lib/auth";
-import {
-  createOpportunity,
-  getOpportunitiesByProfessorId,
-  OpportunityType,
-} from "@/lib/services/opportunity";
+import { auth } from "@/lib/auth";
+import { getOpportunitiesByProfessorId } from "@/lib/services/opportunity";
 
 // GET /api/opportunities/me - Get professor's opportunities
 export async function GET() {

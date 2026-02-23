@@ -17,7 +17,7 @@ async function testConnection() {
 
   try {
     // Test 1: Basic connection
-    const result = await prisma.$queryRaw`SELECT 1 as connected`;
+    await prisma.$queryRaw`SELECT 1 as connected`;
     console.log("✅ Connection successful\n");
 
     // Test 2: Count records in each table

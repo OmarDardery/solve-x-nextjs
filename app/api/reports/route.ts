@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import {
-  createReport,
-  getReportsByStudentId,
-  getReportsByRecipientId,
-} from "@/lib/services/report";
+import { createReport } from "@/lib/services/report";
 
 // POST /api/reports - Create new report (student only)
 export async function POST(request: Request) {

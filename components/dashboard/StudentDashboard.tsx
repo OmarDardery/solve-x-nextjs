@@ -9,7 +9,6 @@ import {
   FileText,
   TrendingUp,
   ExternalLink,
-  Briefcase,
   Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";

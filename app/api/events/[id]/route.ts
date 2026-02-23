@@ -11,7 +11,7 @@ type Props = {
 };
 
 // GET /api/events/:id
-export async function GET(request: Request, { params }: Props) {
+export async function GET(_request: Request, { params }: Props) {
   try {
     const { id } = await params;
     const event = await getEventById(BigInt(id));
@@ -63,7 +63,7 @@ export async function PUT(request: Request, { params }: Props) {
 }
 
 // DELETE /api/events/:id - Delete event (organization only)
-export async function DELETE(request: Request, { params }: Props) {
+export async function DELETE(_request: Request, { params }: Props) {
   try {
     const session = await auth();
     if (!session?.user) {

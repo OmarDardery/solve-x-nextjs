@@ -11,8 +11,6 @@ import {
   FileText,
   Briefcase,
   Loader2,
-  ExternalLink,
-  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
