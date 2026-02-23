@@ -48,6 +48,10 @@ export async function authenticateOrganization(
     throw new Error("Organization not found");
   }
 
+  if (!organization.password) {
+    throw new Error("Invalid credentials");
+  }
+
   const isValid = await checkPasswordHash(password, organization.password);
   if (!isValid) {
     throw new Error("Invalid credentials");
@@ -60,16 +64,16 @@ export async function authenticateOrganization(
  * Get JWT for organization
  */
 export function getOrganizationJWT(organization: {
-  id: number;
-  email: string;
+  id: bigint;
+  email: string | null;
 }) {
-  return generateJWT(organization.id, organization.email, "organization");
+  return generateJWT(organization.id, organization.email || "", "organization");
 }
 
 /**
  * Get organization by ID
  */
-export async function getOrganizationById(id: number) {
+export async function getOrganizationById(id: bigint) {
   const organization = await prisma.organization.findUnique({
     where: { id },
   });
@@ -100,7 +104,7 @@ export async function getOrganizationByEmail(email: string) {
  * Update organization fields
  */
 export async function updateOrganization(
-  id: number,
+  id: bigint,
   updates: {
     name?: string;
     contact?: string;
@@ -126,7 +130,7 @@ export async function updateOrganization(
 /**
  * Delete an organization
  */
-export async function deleteOrganization(id: number) {
+export async function deleteOrganization(id: bigint) {
   await prisma.organization.delete({ where: { id } });
 }
 

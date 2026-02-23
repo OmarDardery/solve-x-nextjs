@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
  * Create a new event
  */
 export async function createEvent(
-  organizationId: number,
+  organizationId: bigint,
   title: string,
   description?: string,
   date?: string,
@@ -31,7 +31,7 @@ export async function createEvent(
 /**
  * Get event by ID
  */
-export async function getEventById(id: number) {
+export async function getEventById(id: bigint) {
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
@@ -61,7 +61,7 @@ export async function getAllEvents() {
 /**
  * Get events by organization ID
  */
-export async function getEventsByOrganizationId(organizationId: number) {
+export async function getEventsByOrganizationId(organizationId: bigint) {
   return prisma.event.findMany({
     where: { organizationId },
     orderBy: { createdAt: "desc" },
@@ -72,7 +72,7 @@ export async function getEventsByOrganizationId(organizationId: number) {
  * Update an event
  */
 export async function updateEvent(
-  id: number,
+  id: bigint,
   updates: {
     title?: string;
     description?: string;
@@ -95,7 +95,7 @@ export async function updateEvent(
 /**
  * Delete an event
  */
-export async function deleteEvent(id: number) {
+export async function deleteEvent(id: bigint) {
   await prisma.event.delete({ where: { id } });
 }
 
@@ -103,8 +103,8 @@ export async function deleteEvent(id: number) {
  * Delete event only if it belongs to the organization
  */
 export async function deleteEventByIdAndOrg(
-  eventId: number,
-  organizationId: number
+  eventId: bigint,
+  organizationId: bigint
 ) {
   const result = await prisma.event.deleteMany({
     where: {

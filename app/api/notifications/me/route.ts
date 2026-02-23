@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getNotificationsByRecipient } from "@/lib/services/notification";
-import { RecipientRole } from "@prisma/client";
+import { getNotificationsByRecipient, RecipientRole } from "@/lib/services/notification";
 
 // GET /api/notifications/me - Get notifications
 export async function GET(request: Request) {
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
     
     // Check for unread_only query param
     const { searchParams } = new URL(request.url);

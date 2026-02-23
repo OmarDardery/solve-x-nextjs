@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const reports = await getReportsByStudentId(parseInt(id));
+    const reports = await getReportsByStudentId(BigInt(id));
 
     return NextResponse.json(reports);
   } catch (error) {

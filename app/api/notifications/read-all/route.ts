@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { markAllNotificationsAsRead } from "@/lib/services/notification";
-import { RecipientRole } from "@prisma/client";
+import { markAllNotificationsAsRead, RecipientRole } from "@/lib/services/notification";
 
 // PUT /api/notifications/read-all - Mark all notifications as read
 export async function PUT() {
@@ -19,7 +18,7 @@ export async function PUT() {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
     await markAllNotificationsAsRead(userId, role as RecipientRole);
 
     return NextResponse.json({ message: "All notifications marked as read" });

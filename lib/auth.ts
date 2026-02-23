@@ -46,10 +46,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               const student = await authenticateStudent(email, password);
               return {
                 id: student.id.toString(),
-                email: student.email,
+                email: student.email || email,
                 role: "student" as UserRole,
-                firstName: student.firstName,
-                lastName: student.lastName,
+                firstName: student.firstName || "",
+                lastName: student.lastName || "",
               };
             }
             case "professor": {
@@ -59,10 +59,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               const professor = await authenticateProfessor(email, password);
               return {
                 id: professor.id.toString(),
-                email: professor.email,
+                email: professor.email || email,
                 role: "professor" as UserRole,
-                firstName: professor.firstName,
-                lastName: professor.lastName,
+                firstName: professor.firstName || "",
+                lastName: professor.lastName || "",
               };
             }
             case "organization": {
@@ -72,9 +72,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               );
               return {
                 id: organization.id.toString(),
-                email: organization.email,
+                email: organization.email || email,
                 role: "organization" as UserRole,
-                name: organization.name,
+                name: organization.name || "",
               };
             }
             default:
@@ -118,7 +118,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
  */
 export async function getCurrentUser(session: { user: { id: string; role: UserRole } }) {
   const { id, role } = session.user;
-  const userId = parseInt(id);
+  const userId = BigInt(id);
 
   switch (role) {
     case "student":

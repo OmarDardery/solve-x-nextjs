@@ -17,7 +17,7 @@ export async function GET() {
       );
     }
 
-    const coins = await getCoinsByStudentId(parseInt(session.user.id));
+    const coins = await getCoinsByStudentId(BigInt(session.user.id));
     return NextResponse.json(coins);
   } catch (error) {
     console.error("Get coins error:", error);

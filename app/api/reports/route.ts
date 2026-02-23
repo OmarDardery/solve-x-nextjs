@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     const report = await createReport(
-      parseInt(session.user.id),
+      BigInt(session.user.id),
       recipient_id,
       drive_link
     );

@@ -55,6 +55,10 @@ export async function authenticateStudent(email: string, password: string) {
     throw new Error("Student not found");
   }
 
+  if (!student.password) {
+    throw new Error("Invalid credentials");
+  }
+
   const isValid = await checkPasswordHash(password, student.password);
   if (!isValid) {
     throw new Error("Invalid credentials");
@@ -66,18 +70,20 @@ export async function authenticateStudent(email: string, password: string) {
 /**
  * Get JWT for student
  */
-export function getStudentJWT(student: { id: number; email: string }) {
-  return generateJWT(student.id, student.email, "student");
+export function getStudentJWT(student: { id: bigint; email: string | null }) {
+  return generateJWT(student.id, student.email || "", "student");
 }
 
 /**
  * Get student by ID with related data
  */
-export async function getStudentById(id: number) {
+export async function getStudentById(id: bigint) {
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
-      tags: true,
+      student_tags: {
+        include: { tags: true },
+      },
       coins: true,
     },
   });
@@ -93,7 +99,7 @@ export async function getStudentById(id: number) {
  * Update student fields
  */
 export async function updateStudent(
-  id: number,
+  id: bigint,
   updates: {
     firstName?: string;
     lastName?: string;
@@ -111,7 +117,9 @@ export async function updateStudent(
     where: { id },
     data: updates,
     include: {
-      tags: true,
+      student_tags: {
+        include: { tags: true },
+      },
       coins: true,
     },
   });
@@ -122,7 +130,7 @@ export async function updateStudent(
 /**
  * Delete a student
  */
-export async function deleteStudent(id: number) {
+export async function deleteStudent(id: bigint) {
   await prisma.student.delete({ where: { id } });
 }
 

@@ -17,7 +17,7 @@ export async function GET() {
       );
     }
 
-    const events = await getEventsByOrganizationId(parseInt(session.user.id));
+    const events = await getEventsByOrganizationId(BigInt(session.user.id));
     return NextResponse.json(events);
   } catch (error) {
     console.error("Get events error:", error);

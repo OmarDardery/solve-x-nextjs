@@ -8,7 +8,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const opportunity = await getOpportunityById(parseInt(id));
+    const opportunity = await getOpportunityById(BigInt(id));
     return NextResponse.json(opportunity);
   } catch (error) {
     console.error("Get opportunity error:", error);

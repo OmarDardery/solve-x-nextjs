@@ -8,7 +8,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const event = await getEventById(parseInt(id));
+    const event = await getEventById(BigInt(id));
     return NextResponse.json(event);
   } catch (error) {
     console.error("Get event error:", error);

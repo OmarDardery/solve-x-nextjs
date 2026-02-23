@@ -41,6 +41,10 @@ export async function authenticateProfessor(email: string, password: string) {
     throw new Error("Professor not found");
   }
 
+  if (!professor.password) {
+    throw new Error("Invalid credentials");
+  }
+
   const isValid = await checkPasswordHash(password, professor.password);
   if (!isValid) {
     throw new Error("Invalid credentials");
@@ -52,14 +56,14 @@ export async function authenticateProfessor(email: string, password: string) {
 /**
  * Get JWT for professor
  */
-export function getProfessorJWT(professor: { id: number; email: string }) {
-  return generateJWT(professor.id, professor.email, "professor");
+export function getProfessorJWT(professor: { id: bigint; email: string | null }) {
+  return generateJWT(professor.id, professor.email || "", "professor");
 }
 
 /**
  * Get professor by ID
  */
-export async function getProfessorById(id: number) {
+export async function getProfessorById(id: bigint) {
   const professor = await prisma.professor.findUnique({
     where: { id },
   });
@@ -75,7 +79,7 @@ export async function getProfessorById(id: number) {
  * Update professor fields
  */
 export async function updateProfessor(
-  id: number,
+  id: bigint,
   updates: {
     firstName?: string;
     lastName?: string;
@@ -100,7 +104,7 @@ export async function updateProfessor(
 /**
  * Delete a professor
  */
-export async function deleteProfessor(id: number) {
+export async function deleteProfessor(id: bigint) {
   await prisma.professor.delete({ where: { id } });
 }
 

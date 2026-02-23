@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const event = await createEvent(
-      parseInt(session.user.id),
+      BigInt(session.user.id),
       title,
       description,
       date,

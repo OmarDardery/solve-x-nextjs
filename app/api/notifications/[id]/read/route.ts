@@ -23,9 +23,9 @@ export async function PUT(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
 
-    await markNotificationAsRead(parseInt(id), userId);
+    await markNotificationAsRead(BigInt(id), userId);
 
     return NextResponse.json({ message: "Notification marked as read" });
   } catch (error) {

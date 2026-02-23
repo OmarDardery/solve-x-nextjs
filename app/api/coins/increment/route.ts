@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await incrementCoins(parseInt(session.user.id), amount);
+    await incrementCoins(BigInt(session.user.id), amount);
 
     return NextResponse.json({ message: "Coins incremented" });
   } catch (error) {

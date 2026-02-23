@@ -14,7 +14,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const event = await getEventById(parseInt(id));
+    const event = await getEventById(BigInt(id));
     return NextResponse.json(event);
   } catch (error) {
     console.error("Get event error:", error);
@@ -38,11 +38,11 @@ export async function PUT(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const eventId = parseInt(id);
+    const eventId = BigInt(id);
 
     // Check ownership
     const event = await getEventById(eventId);
-    if (event.organizationId !== parseInt(session.user.id)) {
+    if (event.organizationId !== BigInt(session.user.id)) {
       return NextResponse.json(
         { error: "You can only edit your own events" },
         { status: 403 }
@@ -78,9 +78,9 @@ export async function DELETE(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const eventId = parseInt(id);
+    const eventId = BigInt(id);
 
-    await deleteEventByIdAndOrg(eventId, parseInt(session.user.id));
+    await deleteEventByIdAndOrg(eventId, BigInt(session.user.id));
 
     return NextResponse.json({ message: "Event deleted" });
   } catch (error) {

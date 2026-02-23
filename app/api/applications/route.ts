@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     await getOpportunityById(opportunity_id);
 
     const application = await createApplication(
-      parseInt(session.user.id),
+      BigInt(session.user.id),
       opportunity_id,
       message,
       resume_link
@@ -79,7 +79,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await deleteApplication(parseInt(session.user.id), opportunity_id);
+    await deleteApplication(BigInt(session.user.id), opportunity_id);
 
     return NextResponse.json({ message: "Application deleted" });
   } catch (error) {

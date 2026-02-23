@@ -1,17 +1,18 @@
 import prisma from "@/lib/prisma";
-import { OpportunityType } from "@prisma/client";
+
+export type OpportunityType = "research" | "project" | "internship";
 
 /**
  * Create a new opportunity
  */
 export async function createOpportunity(
-  professorId: number,
+  professorId: bigint,
   name: string,
   details: string | null,
   requirements: string | null,
   reward: string | null,
   type: OpportunityType,
-  tagIds?: number[]
+  tagIds?: bigint[]
 ) {
   // Validate type
   if (!["research", "project", "internship"].includes(type)) {
@@ -26,15 +27,17 @@ export async function createOpportunity(
       requirements,
       reward,
       type,
-      tags: tagIds?.length
+      opportunity_tags: tagIds?.length
         ? {
-            connect: tagIds.map((id) => ({ id })),
+            create: tagIds.map((tagId) => ({ tagId })),
           }
         : undefined,
     },
     include: {
       professor: true,
-      tags: true,
+      opportunity_tags: {
+        include: { tags: true },
+      },
     },
   });
 
@@ -44,12 +47,14 @@ export async function createOpportunity(
 /**
  * Get opportunity by ID
  */
-export async function getOpportunityById(id: number) {
+export async function getOpportunityById(id: bigint) {
   const opportunity = await prisma.opportunity.findUnique({
     where: { id },
     include: {
       professor: true,
-      tags: true,
+      opportunity_tags: {
+        include: { tags: true },
+      },
     },
   });
 
@@ -64,31 +69,39 @@ export async function getOpportunityById(id: number) {
  * Update opportunity fields
  */
 export async function updateOpportunity(
-  id: number,
+  id: bigint,
   updates: {
     name?: string;
     details?: string;
     requirements?: string;
     reward?: string;
-    type?: OpportunityType;
-    tagIds?: number[];
+    type?: string;
+    tagIds?: bigint[];
   }
 ) {
   const { tagIds, ...data } = updates;
 
+  // If tagIds provided, delete existing and create new junction records
+  if (tagIds !== undefined) {
+    await prisma.opportunityTags.deleteMany({
+      where: { opportunityId: id },
+    });
+
+    if (tagIds.length > 0) {
+      await prisma.opportunityTags.createMany({
+        data: tagIds.map((tagId) => ({ opportunityId: id, tagId })),
+      });
+    }
+  }
+
   const opportunity = await prisma.opportunity.update({
     where: { id },
-    data: {
-      ...data,
-      tags: tagIds
-        ? {
-            set: tagIds.map((id) => ({ id })),
-          }
-        : undefined,
-    },
+    data,
     include: {
       professor: true,
-      tags: true,
+      opportunity_tags: {
+        include: { tags: true },
+      },
     },
   });
 
@@ -98,19 +111,21 @@ export async function updateOpportunity(
 /**
  * Delete an opportunity
  */
-export async function deleteOpportunity(id: number) {
+export async function deleteOpportunity(id: bigint) {
   await prisma.opportunity.delete({ where: { id } });
 }
 
 /**
  * Get all opportunities by professor ID
  */
-export async function getOpportunitiesByProfessorId(professorId: number) {
+export async function getOpportunitiesByProfessorId(professorId: bigint) {
   return prisma.opportunity.findMany({
     where: { professorId },
     include: {
       professor: true,
-      tags: true,
+      opportunity_tags: {
+        include: { tags: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -123,7 +138,9 @@ export async function getAllOpportunities() {
   return prisma.opportunity.findMany({
     include: {
       professor: true,
-      tags: true,
+      opportunity_tags: {
+        include: { tags: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

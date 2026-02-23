@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createOpportunity } from "@/lib/services/opportunity";
-import { OpportunityType } from "@prisma/client";
+import { createOpportunity, OpportunityType } from "@/lib/services/opportunity";
 
 // POST /api/opportunities - Create new opportunity (professor only)
 export async function POST(request: Request) {
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const opportunity = await createOpportunity(
-      parseInt(session.user.id),
+      BigInt(session.user.id),
       name,
       details || null,
       requirements || null,

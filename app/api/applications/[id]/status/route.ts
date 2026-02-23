@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getApplicationById, updateApplicationStatus } from "@/lib/services/application";
-import { ApplicationStatus } from "@prisma/client";
+import { getApplicationById, updateApplicationStatus, ApplicationStatus } from "@/lib/services/application";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -23,11 +22,11 @@ export async function PUT(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const applicationId = parseInt(id);
+    const applicationId = BigInt(id);
 
     // Get application and verify professor owns the opportunity
     const application = await getApplicationById(applicationId);
-    if (application.opportunity.professorId !== parseInt(session.user.id)) {
+    if (application.opportunity.professorId !== BigInt(session.user.id)) {
       return NextResponse.json(
         { error: "Cannot modify applications for opportunities you don't own" },
         { status: 403 }

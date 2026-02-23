@@ -8,7 +8,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const events = await getEventsByOrganizationId(parseInt(id));
+    const events = await getEventsByOrganizationId(BigInt(id));
     return NextResponse.json(events);
   } catch (error) {
     console.error("Get organization events error:", error);

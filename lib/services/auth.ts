@@ -5,7 +5,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "";
 const JWT_EXPIRY = "72h"; // 72 hours like the original
 
 export interface JWTPayload {
-  userId: number;
+  user_id: number; // snake_case to match Go JWT, number for JSON serialization
   email: string;
   role: "student" | "professor" | "organization";
   iat?: number;
@@ -34,7 +34,7 @@ export async function checkPasswordHash(
  * Generate a JWT token
  */
 export function generateJWT(
-  userId: number,
+  userId: bigint,
   email: string,
   role: "student" | "professor" | "organization"
 ): string {
@@ -43,7 +43,7 @@ export function generateJWT(
   }
 
   const payload: JWTPayload = {
-    userId,
+    user_id: Number(userId), // Convert BigInt to number for JSON serialization
     email,
     role,
   };

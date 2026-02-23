@@ -1,11 +1,13 @@
 import prisma from "@/lib/prisma";
-import { RecipientRole, NotificationType } from "@prisma/client";
+
+export type RecipientRole = "student" | "professor";
+export type NotificationType = "info" | "success" | "warning" | "error";
 
 /**
  * Create a notification
  */
 export async function createNotification(
-  recipientId: number,
+  recipientId: bigint,
   recipientRole: RecipientRole,
   title: string,
   message: string,
@@ -39,8 +41,8 @@ export async function createNotification(
  * Get notifications by recipient
  */
 export async function getNotificationsByRecipient(
-  recipientId: number,
-  recipientRole: RecipientRole,
+  recipientId: bigint,
+  recipientRole: string,
   unreadOnly = false
 ) {
   return prisma.notification.findMany({
@@ -57,8 +59,8 @@ export async function getNotificationsByRecipient(
  * Mark a notification as read
  */
 export async function markNotificationAsRead(
-  notificationId: number,
-  recipientId: number
+  notificationId: bigint,
+  recipientId: bigint
 ) {
   const result = await prisma.notification.updateMany({
     where: {
@@ -80,8 +82,8 @@ export async function markNotificationAsRead(
  * Mark all notifications as read for a user
  */
 export async function markAllNotificationsAsRead(
-  recipientId: number,
-  recipientRole: RecipientRole
+  recipientId: bigint,
+  recipientRole: string
 ) {
   await prisma.notification.updateMany({
     where: {
@@ -100,8 +102,8 @@ export async function markAllNotificationsAsRead(
  * Delete a notification
  */
 export async function deleteNotification(
-  notificationId: number,
-  recipientId: number
+  notificationId: bigint,
+  recipientId: bigint
 ) {
   const result = await prisma.notification.deleteMany({
     where: {
@@ -119,8 +121,8 @@ export async function deleteNotification(
  * Get unread notification count
  */
 export async function getUnreadNotificationCount(
-  recipientId: number,
-  recipientRole: RecipientRole
+  recipientId: bigint,
+  recipientRole: string
 ) {
   return prisma.notification.count({
     where: {
@@ -135,7 +137,7 @@ export async function getUnreadNotificationCount(
  * Notify professor when a student submits a weekly report
  */
 export async function notifyNewReport(
-  professorId: number,
+  professorId: bigint,
   studentName: string
 ) {
   const title = "📝 Weekly Report Submitted";

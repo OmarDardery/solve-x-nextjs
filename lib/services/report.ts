@@ -5,8 +5,8 @@ import { notifyNewReport } from "./notification";
  * Create a new weekly report and notify the professor
  */
 export async function createReport(
-  studentId: number,
-  recipientId: number,
+  studentId: bigint,
+  recipientId: bigint,
   driveLink: string
 ) {
   // Validate recipient (professor) exists
@@ -47,7 +47,7 @@ export async function createReport(
 /**
  * Get reports by student ID
  */
-export async function getReportsByStudentId(studentId: number) {
+export async function getReportsByStudentId(studentId: bigint) {
   return prisma.weeklyReport.findMany({
     where: { studentId },
     include: {
@@ -61,7 +61,7 @@ export async function getReportsByStudentId(studentId: number) {
 /**
  * Get reports by recipient (professor) ID
  */
-export async function getReportsByRecipientId(recipientId: number) {
+export async function getReportsByRecipientId(recipientId: bigint) {
   return prisma.weeklyReport.findMany({
     where: { recipientId },
     include: {
@@ -75,7 +75,7 @@ export async function getReportsByRecipientId(recipientId: number) {
 /**
  * Get report by ID
  */
-export async function getReportById(id: number) {
+export async function getReportById(id: bigint) {
   const report = await prisma.weeklyReport.findUnique({
     where: { id },
     include: {
@@ -94,7 +94,7 @@ export async function getReportById(id: number) {
 /**
  * Delete a report (only by the student who created it)
  */
-export async function deleteReport(reportId: number, studentId: number) {
+export async function deleteReport(reportId: bigint, studentId: bigint) {
   const result = await prisma.weeklyReport.deleteMany({
     where: {
       id: reportId,

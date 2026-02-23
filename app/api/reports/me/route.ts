@@ -15,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
 
     if (session.user.role === "student") {
       const reports = await getReportsByStudentId(userId);

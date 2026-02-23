@@ -23,9 +23,9 @@ export async function DELETE(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
 
-    await deleteNotification(parseInt(id), userId);
+    await deleteNotification(BigInt(id), userId);
 
     return NextResponse.json({ message: "Notification deleted" });
   } catch (error) {

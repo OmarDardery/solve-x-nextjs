@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getUnreadNotificationCount } from "@/lib/services/notification";
-import { RecipientRole } from "@prisma/client";
+import { getUnreadNotificationCount, RecipientRole } from "@/lib/services/notification";
 
 // GET /api/notifications/me/count - Get unread notification count
 export async function GET() {
@@ -19,7 +18,7 @@ export async function GET() {
       );
     }
 
-    const userId = parseInt(session.user.id);
+    const userId = BigInt(session.user.id);
     const count = await getUnreadNotificationCount(userId, role as RecipientRole);
 
     return NextResponse.json({ count });

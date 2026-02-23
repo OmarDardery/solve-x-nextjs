@@ -3,8 +3,8 @@ import { auth, getCurrentUser } from "@/lib/auth";
 import {
   createOpportunity,
   getOpportunitiesByProfessorId,
+  OpportunityType,
 } from "@/lib/services/opportunity";
-import { OpportunityType } from "@prisma/client";
 
 // GET /api/opportunities/me - Get professor's opportunities
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
     }
 
     const opportunities = await getOpportunitiesByProfessorId(
-      parseInt(session.user.id)
+      BigInt(session.user.id)
     );
     return NextResponse.json(opportunities);
   } catch (error) {

@@ -1,6 +1,3 @@
-// Prisma Schema for SolveX
-// Migrated from Go/GORM models
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,197 +6,187 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==================== USER MODELS ====================
-
 model Student {
-  id                  Int       @id @default(autoincrement())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
-  firstName           String
-  lastName            String
-  email               String    @unique
-  password            String
-  lastChangedPassword DateTime  @default(now())
+  id                  BigInt         @id @default(autoincrement())
+  createdAt           DateTime?      @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime?      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  firstName           String?        @map("first_name")
+  lastName            String?        @map("last_name")
+  email               String?        @unique(map: "uni_students_email")
+  password            String?
+  lastChangedPassword DateTime?      @map("last_changed_password") @db.Timestamptz(6)
+  applications        Application[]
+  coins               Coins?
+  student_tags        StudentTags[]
+  reports             WeeklyReport[]
 
-  // Relations
-  tags          Tag[]          @relation("StudentTags")
-  coins         Coins?
-  applications  Application[]
-  reports       WeeklyReport[]
-
+  @@index([deletedAt], map: "idx_students_deleted_at")
   @@map("students")
 }
 
 model Professor {
-  id                  Int       @id @default(autoincrement())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
-  firstName           String
-  lastName            String
-  email               String    @unique
-  password            String
-  lastChangedPassword DateTime  @default(now())
+  id                  BigInt         @id @default(autoincrement())
+  createdAt           DateTime?      @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime?      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  firstName           String?        @map("first_name")
+  lastName            String?        @map("last_name")
+  email               String?        @unique(map: "uni_professors_email")
+  password            String?
+  lastChangedPassword DateTime?      @map("last_changed_password") @db.Timestamptz(6)
+  opportunities       Opportunity[]
+  receivedReports     WeeklyReport[] @relation("ReportRecipient")
 
-  // Relations
-  opportunities    Opportunity[]
-  receivedReports  WeeklyReport[] @relation("ReportRecipient")
-
+  @@index([deletedAt], map: "idx_professors_deleted_at")
   @@map("professors")
 }
 
 model Organization {
-  id                  Int       @id @default(autoincrement())
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
-  name                String
-  email               String    @unique
-  password            String
+  id                  BigInt    @id @default(autoincrement())
+  createdAt           DateTime? @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  name                String?
+  email               String?   @unique(map: "uni_organizations_email")
+  password            String?
   contact             String?
   link                String?
-  lastChangedPassword DateTime  @default(now())
+  lastChangedPassword DateTime? @map("last_changed_password") @db.Timestamptz(6)
+  events              Event[]
 
-  // Relations
-  events Event[]
-
+  @@index([deletedAt], map: "idx_organizations_deleted_at")
   @@map("organizations")
 }
 
-// ==================== FEATURE MODELS ====================
-
 model Tag {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  name        String    @unique
-  description String?
+  id               BigInt            @id @default(autoincrement())
+  createdAt        DateTime?         @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime?         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  name             String            @unique(map: "uni_tags_name")
+  description      String?
+  opportunity_tags OpportunityTags[]
+  student_tags     StudentTags[]
 
-  // Relations
-  students      Student[]     @relation("StudentTags")
-  opportunities Opportunity[] @relation("OpportunityTags")
-
+  @@index([deletedAt], map: "idx_tags_deleted_at")
   @@map("tags")
 }
 
 model Coins {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  amount    Int       @default(0)
-  studentId Int       @unique
-  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id        BigInt    @id @default(autoincrement())
+  createdAt DateTime? @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  amount    BigInt
+  studentId BigInt    @unique(map: "idx_coins_student_id") @map("student_id")
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_students_coins")
 
+  @@index([deletedAt], map: "idx_coins_deleted_at")
   @@map("coins")
 }
 
 model Opportunity {
-  id           Int       @id @default(autoincrement())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  professorId  Int
-  professor    Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
-  name         String
-  details      String?   @db.Text
-  requirements String?   @db.Text
-  reward       String?   @db.Text
-  type         OpportunityType
+  id               BigInt            @id @default(autoincrement())
+  createdAt        DateTime?         @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime?         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  professorId      BigInt            @map("professor_id")
+  name             String
+  details          String?
+  requirements     String?
+  reward           String?
+  type             String
+  applications     Application[]
+  professor        Professor         @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "fk_opportunities_professor")
+  opportunity_tags OpportunityTags[]
 
-  // Relations
-  tags         Tag[]         @relation("OpportunityTags")
-  applications Application[]
-
+  @@index([deletedAt], map: "idx_opportunities_deleted_at")
   @@map("opportunities")
 }
 
-enum OpportunityType {
-  research
-  project
-  internship
-}
-
 model Application {
-  id            Int         @id @default(autoincrement())
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  deletedAt     DateTime?
-  studentId     Int
-  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  opportunityId Int
-  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  message       String?     @db.Text
-  resumeLink    String?
-  status        ApplicationStatus @default(pending)
+  id            BigInt      @id @default(autoincrement())
+  createdAt     DateTime?   @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime?   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  studentId     BigInt      @map("student_id")
+  opportunityId BigInt      @map("opportunity_id")
+  message       String?
+  resumeLink    String?     @map("resume_link")
+  status        String      @default("pending")
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade, map: "fk_applications_opportunity")
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_applications_student")
 
-  @@unique([studentId, opportunityId])
+  @@index([deletedAt], map: "idx_applications_deleted_at")
   @@map("applications")
 }
 
-enum ApplicationStatus {
-  pending
-  accepted
-  rejected
-}
-
 model Event {
-  id             Int          @id @default(autoincrement())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
-  title          String
-  description    String?      @db.Text
+  id             BigInt        @id @default(autoincrement())
+  createdAt      DateTime?     @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  title          String?
+  description    String?
   date           String?
   link           String?
-  signUpLink     String?
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  signUpLink     String?       @map("sign_up_link")
+  organizationId BigInt?       @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_organization")
 
+  @@index([deletedAt], map: "idx_events_deleted_at")
   @@map("events")
 }
 
 model WeeklyReport {
-  id          Int       @id @default(autoincrement())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  studentId   Int
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  recipientId Int
-  recipient   Professor @relation("ReportRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  driveLink   String
+  id          BigInt    @id @default(autoincrement())
+  createdAt   DateTime? @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  studentId   BigInt    @map("student_id")
+  recipientId BigInt    @map("recipient_id")
+  driveLink   String    @map("drive_link")
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_weekly_reports_student")
+  recipient   Professor @relation("ReportRecipient", fields: [recipientId], references: [id], onDelete: Cascade, map: "fk_weekly_reports_recipient")
 
+  @@index([deletedAt], map: "idx_weekly_reports_deleted_at")
   @@map("weekly_reports")
 }
 
 model Notification {
-  id            Int              @id @default(autoincrement())
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  deletedAt     DateTime?
-  recipientId   Int
-  recipientRole RecipientRole
+  id            BigInt    @id @default(autoincrement())
+  createdAt     DateTime? @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+  recipientId   BigInt    @map("recipient_id")
+  recipientRole String    @map("recipient_role")
   title         String
-  message       String           @db.Text
-  type          NotificationType @default(info)
-  read          Boolean          @default(false)
-  readAt        DateTime?
+  message       String
+  type          String?   @default("info")
+  read          Boolean?  @default(false)
+  readAt        DateTime? @map("read_at") @db.Timestamptz(6)
 
-  @@index([recipientId, recipientRole])
+  @@index([deletedAt], map: "idx_notifications_deleted_at")
   @@map("notifications")
 }
 
-enum RecipientRole {
-  student
-  professor
+model StudentTags {
+  studentId BigInt  @map("student_id")
+  tagId     BigInt  @map("tag_id")
+  students  Student @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_student_tags_student")
+  tags      Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade, map: "fk_student_tags_tag")
+
+  @@id([studentId, tagId])
+  @@map("student_tags")
 }
 
-enum NotificationType {
-  info
-  success
-  warning
-  error
+model OpportunityTags {
+  opportunityId BigInt      @map("opportunity_id")
+  tagId         BigInt      @map("tag_id")
+  opportunities Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade, map: "fk_opportunity_tags_opportunity")
+  tags          Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade, map: "fk_opportunity_tags_tag")
+
+  @@id([opportunityId, tagId])
+  @@map("opportunity_tags")
 }

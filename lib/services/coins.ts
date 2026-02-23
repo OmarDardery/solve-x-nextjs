@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 /**
  * Create coins record for a student (internal use, called when creating student)
  */
-export async function createCoins(studentId: number) {
+export async function createCoins(studentId: bigint) {
   return prisma.coins.create({
     data: {
       amount: 0,
@@ -15,7 +15,7 @@ export async function createCoins(studentId: number) {
 /**
  * Get coins by student ID
  */
-export async function getCoinsByStudentId(studentId: number) {
+export async function getCoinsByStudentId(studentId: bigint) {
   const coins = await prisma.coins.findUnique({
     where: { studentId },
   });
@@ -30,7 +30,7 @@ export async function getCoinsByStudentId(studentId: number) {
 /**
  * Increment student's coins
  */
-export async function incrementCoins(studentId: number, amount: number) {
+export async function incrementCoins(studentId: bigint, amount: number) {
   const coins = await prisma.coins.update({
     where: { studentId },
     data: {
@@ -46,7 +46,7 @@ export async function incrementCoins(studentId: number, amount: number) {
 /**
  * Decrement student's coins (with validation)
  */
-export async function decrementCoins(studentId: number, amount: number) {
+export async function decrementCoins(studentId: bigint, amount: number) {
   // Get current coins first
   const current = await getCoinsByStudentId(studentId);
 

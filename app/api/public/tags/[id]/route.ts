@@ -8,7 +8,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const tag = await getTagById(parseInt(id));
+    const tag = await getTagById(BigInt(id));
     return NextResponse.json(tag);
   } catch (error) {
     console.error("Get tag error:", error);

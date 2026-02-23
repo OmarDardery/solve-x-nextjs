@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
-import { ApplicationStatus } from "@prisma/client";
 import { createNotification } from "./notification";
+
+export type ApplicationStatus = "pending" | "accepted" | "rejected";
 
 export const STATUS_PENDING = "pending" as const;
 export const STATUS_ACCEPTED = "accepted" as const;
@@ -10,15 +11,16 @@ export const STATUS_REJECTED = "rejected" as const;
  * Create an application for a student
  */
 export async function createApplication(
-  studentId: number,
-  opportunityId: number,
+  studentId: bigint,
+  opportunityId: bigint,
   message?: string,
   resumeLink?: string
 ) {
   // Check if application already exists
-  const existing = await prisma.application.findUnique({
+  const existing = await prisma.application.findFirst({
     where: {
-      studentId_opportunityId: { studentId, opportunityId },
+      studentId,
+      opportunityId,
     },
   });
 
@@ -51,8 +53,8 @@ export async function createApplication(
  * Delete an application
  */
 export async function deleteApplication(
-  studentId: number,
-  opportunityId: number
+  studentId: bigint,
+  opportunityId: bigint
 ) {
   await prisma.application.deleteMany({
     where: { studentId, opportunityId },
@@ -62,7 +64,7 @@ export async function deleteApplication(
 /**
  * Get applications by opportunity ID
  */
-export async function getApplicationsByOpportunityId(opportunityId: number) {
+export async function getApplicationsByOpportunityId(opportunityId: bigint) {
   return prisma.application.findMany({
     where: { opportunityId },
     include: {
@@ -76,7 +78,7 @@ export async function getApplicationsByOpportunityId(opportunityId: number) {
 /**
  * Get applications by student ID
  */
-export async function getApplicationsByStudentId(studentId: number) {
+export async function getApplicationsByStudentId(studentId: bigint) {
   return prisma.application.findMany({
     where: { studentId },
     include: {
@@ -95,7 +97,7 @@ export async function getApplicationsByStudentId(studentId: number) {
  * Get applications for all opportunities by a professor
  */
 export async function getApplicationsByProfessorOpportunities(
-  professorId: number
+  professorId: bigint
 ) {
   return prisma.application.findMany({
     where: {
@@ -118,7 +120,7 @@ export async function getApplicationsByProfessorOpportunities(
 /**
  * Get application by ID
  */
-export async function getApplicationById(id: number) {
+export async function getApplicationById(id: bigint) {
   const application = await prisma.application.findUnique({
     where: { id },
     include: {
@@ -142,7 +144,7 @@ export async function getApplicationById(id: number) {
  * Update application status
  */
 export async function updateApplicationStatus(
-  id: number,
+  id: bigint,
   status: ApplicationStatus
 ) {
   // Validate status
@@ -186,7 +188,7 @@ export async function updateApplicationStatus(
  * Helper to notify student of application status change
  */
 async function notifyApplicationStatusChange(
-  studentId: number,
+  studentId: bigint,
   opportunityName: string,
   status: string
 ) {

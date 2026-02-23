@@ -14,7 +14,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const opportunity = await getOpportunityById(parseInt(id));
+    const opportunity = await getOpportunityById(BigInt(id));
     return NextResponse.json(opportunity);
   } catch (error) {
     console.error("Get opportunity error:", error);
@@ -38,11 +38,11 @@ export async function PUT(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const opportunityId = parseInt(id);
+    const opportunityId = BigInt(id);
 
     // Check ownership
     const opportunity = await getOpportunityById(opportunityId);
-    if (opportunity.professorId !== parseInt(session.user.id)) {
+    if (opportunity.professorId !== BigInt(session.user.id)) {
       return NextResponse.json(
         { error: "Cannot modify opportunities you don't own" },
         { status: 403 }
@@ -78,11 +78,11 @@ export async function DELETE(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    const opportunityId = parseInt(id);
+    const opportunityId = BigInt(id);
 
     // Check ownership
     const opportunity = await getOpportunityById(opportunityId);
-    if (opportunity.professorId !== parseInt(session.user.id)) {
+    if (opportunity.professorId !== BigInt(session.user.id)) {
       return NextResponse.json(
         { error: "Cannot delete opportunities you don't own" },
         { status: 403 }

@@ -22,7 +22,7 @@ export async function DELETE(request: Request, { params }: Props) {
     }
 
     const { id } = await params;
-    await deleteReport(parseInt(id), parseInt(session.user.id));
+    await deleteReport(BigInt(id), BigInt(session.user.id));
 
     return NextResponse.json({ message: "Report deleted" });
   } catch (error) {

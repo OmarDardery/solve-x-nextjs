@@ -8,7 +8,7 @@ type Props = {
 export async function GET(request: Request, { params }: Props) {
   try {
     const { id } = await params;
-    const organization = await getOrganizationById(parseInt(id));
+    const organization = await getOrganizationById(BigInt(id));
     
     // Return organization without sensitive data
     const { password, ...safeOrg } = organization as typeof organization & { password?: string };
