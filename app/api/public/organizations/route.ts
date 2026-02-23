@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAllOrganizations } from "@/lib/services/organization";
 
+type OrganizationResult = Awaited<ReturnType<typeof getAllOrganizations>>[number];
+
 // GET /api/public/organizations - Get all organizations (public)
 export async function GET() {
   try {
     const organizations = await getAllOrganizations();
 
     // Transform for API response
-    const transformed = organizations.map((org) => ({
+    const transformed = organizations.map((org: OrganizationResult) => ({
       id: org.id.toString(),
       name: org.name,
       email: org.email,
