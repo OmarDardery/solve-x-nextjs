@@ -15,8 +15,8 @@ RUN bun install
 # Copy source code
 COPY . .
 
-# Generate Prisma client (if using Prisma)
-# RUN bunx prisma generate
+# Generate Prisma client
+RUN bunx prisma generate
 
 # Expose development port
 EXPOSE 3000

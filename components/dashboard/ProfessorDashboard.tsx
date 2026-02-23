@@ -11,6 +11,8 @@ import {
   FileText,
   Briefcase,
   Loader2,
+  ExternalLink,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -37,10 +39,16 @@ export default function ProfessorDashboard() {
 
   const fetchData = async () => {
     try {
-      const [oppsData, appsData] = await Promise.all([
-        opportunityApi.getMyOpportunities().catch(() => []),
-        applicationApi.getMyApplications().catch(() => []),
-      ]);
+      if (!session?.user) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch professor's opportunities
+      const oppsData = await opportunityApi.getMyOpportunities().catch(() => []);
+
+      // Fetch applications for professor's opportunities
+      const appsData = await applicationApi.getMyApplications().catch(() => []);
 
       setOpportunities(oppsData || []);
       setApplications(appsData || []);
@@ -52,12 +60,13 @@ export default function ProfessorDashboard() {
     }
   };
 
+  const publishedOpportunities = opportunities;
   const pendingApplications = applications.filter((a) => a.status === "pending");
 
   const stats = [
     {
       label: "Published Opportunities",
-      value: opportunities.length,
+      value: publishedOpportunities.length,
       icon: Briefcase,
       color: "text-blue-500",
     },
@@ -91,19 +100,21 @@ export default function ProfessorDashboard() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Header */}
+    <div className="page-bg space-y-6 sm:space-y-8 -m-4 sm:-m-6 p-4 sm:p-6">
       <div className="card flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-heading">
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-heading">
             Professor Dashboard
           </h1>
-          <p className="text-muted mt-1 text-sm sm:text-base">
+          <p className="text-body mt-1 text-sm sm:text-base">
             Manage your research projects and applications
           </p>
         </div>
         <div className="flex gap-3">
-          <Button onClick={() => setShowCreateModal(true)} className="text-sm sm:text-base">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="text-sm sm:text-base"
+          >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Create Project
           </Button>
@@ -119,7 +130,7 @@ export default function ProfessorDashboard() {
               <CardContent className="p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <p className="text-xs sm:text-sm text-muted mb-1 line-clamp-1">
+                    <p className="text-xs sm:text-sm text-body mb-1 line-clamp-1">
                       {stat.label}
                     </p>
                     <p className="text-xl sm:text-3xl font-bold text-heading">
@@ -141,7 +152,7 @@ export default function ProfessorDashboard() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>My Published Opportunities</CardTitle>
-            <Button as={Link} href="/opportunities" variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" as={Link} href="/opportunities">
               View All
             </Button>
           </div>
@@ -149,12 +160,12 @@ export default function ProfessorDashboard() {
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-brand" />
             </div>
-          ) : opportunities.length === 0 ? (
+          ) : publishedOpportunities.length === 0 ? (
             <div className="text-center py-8">
-              <Briefcase className="w-12 h-12 text-muted mx-auto mb-4" />
-              <p className="text-muted mb-4">
+              <Briefcase className="w-12 h-12 icon-muted mx-auto mb-4" />
+              <p className="text-body mb-4">
                 No published opportunities yet. Create and publish your first
                 opportunity!
               </p>
@@ -165,7 +176,7 @@ export default function ProfessorDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {opportunities.slice(0, 5).map((opportunity) => {
+              {publishedOpportunities.slice(0, 5).map((opportunity) => {
                 const oppApplications = applications.filter(
                   (a) => a.opportunity_id === opportunity.id
                 );
@@ -176,14 +187,13 @@ export default function ProfessorDashboard() {
                 return (
                   <div
                     key={opportunity.id}
-                    className="p-4 border rounded-lg hover:border-primary transition-colors"
-                    style={{ borderColor: "var(--card-border)" }}
+                    className="p-4 border rounded-lg border-default hover:border-brand transition-colors"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-heading">
-                            {opportunity.title}
+                            {opportunity.name}
                           </h3>
                           <Badge variant="success">Active</Badge>
                           {oppApplications.length > 0 && (
@@ -192,23 +202,25 @@ export default function ProfessorDashboard() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-muted mb-3 line-clamp-2">
-                          {opportunity.description}
+                        <p className="text-body mb-3 line-clamp-2">
+                          {opportunity.details}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-muted">
                           <span>{opportunity.type}</span>
                           <span>•</span>
-                          <span>{opportunity.tags?.length || 0} tags</span>
+                          <span>
+                            {opportunity.requirement_tags?.length || 0} tags
+                          </span>
                           <span>•</span>
                           <span>{pendingCount} pending</span>
                         </div>
                       </div>
                       <div className="flex gap-2 ml-4">
                         <Button
-                          as={Link}
-                          href={`/opportunities/${opportunity.id}`}
                           variant="ghost"
                           size="sm"
+                          as={Link}
+                          href={`/opportunities/${opportunity.id}`}
                         >
                           View
                         </Button>
@@ -227,7 +239,7 @@ export default function ProfessorDashboard() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Recent Applications</CardTitle>
-            <Button as={Link} href="/applications" variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" as={Link} href="/applications">
               View All
             </Button>
           </div>
@@ -235,47 +247,56 @@ export default function ProfessorDashboard() {
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-brand" />
             </div>
           ) : applications.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-muted mx-auto mb-4" />
-              <p className="text-muted">
+              <FileText className="w-12 h-12 icon-muted mx-auto mb-4" />
+              <p className="text-body">
                 No applications yet. Applications will appear here when students
                 apply to your opportunities.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {applications.slice(0, 5).map((application) => (
-                <div
-                  key={application.id}
-                  className="p-4 border rounded-lg hover:border-primary transition-colors"
-                  style={{ borderColor: "var(--card-border)" }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-heading">
-                          {application.opportunity?.title || "Opportunity"}
-                        </h3>
-                        <Badge variant={getStatusBadge(application.status)}>
-                          {application.status}
-                        </Badge>
+              {applications.slice(0, 5).map((application) => {
+                return (
+                  <div
+                    key={application.id}
+                    className="p-4 border rounded-lg border-default hover:border-brand transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-heading">
+                            {application.opportunity?.name || "Opportunity"}
+                          </h3>
+                          <Badge variant={getStatusBadge(application.status)}>
+                            {application.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted">
+                          {application.student?.first_name}{" "}
+                          {application.student?.last_name} • Applied on{" "}
+                          {application.created_at
+                            ? new Date(
+                                application.created_at
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted">
-                        {application.student?.name} • Applied on{" "}
-                        {application.created_at
-                          ? new Date(application.created_at).toLocaleDateString()
-                          : "N/A"}
-                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        as={Link}
+                        href="/applications"
+                      >
+                        View
+                      </Button>
                     </div>
-                    <Button as={Link} href="/applications" variant="ghost" size="sm">
-                      View
-                    </Button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -292,6 +313,7 @@ export default function ProfessorDashboard() {
           onSuccess={() => {
             setShowCreateModal(false);
             fetchData();
+            toast.success("Opportunity created successfully!");
           }}
           onCancel={() => setShowCreateModal(false)}
         />

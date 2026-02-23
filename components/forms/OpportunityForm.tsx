@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react";
+import { Search, Plus, X } from "lucide-react";
 import { Input, Textarea, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { opportunityApi, tagApi, type Tag } from "@/lib/api";
 import { OPPORTUNITY_TYPES } from "@/lib/types";
 
@@ -14,35 +15,38 @@ interface OpportunityFormProps {
 }
 
 interface FormData {
-  title: string;
-  description: string;
+  name: string;
+  details: string;
   requirements: string;
-  compensation: string;
+  reward: string;
   type: string;
-  duration: string;
-  location: string;
-  is_remote: boolean;
 }
 
-export default function OpportunityForm({ onSuccess, onCancel }: OpportunityFormProps) {
+interface TagWithId extends Tag {
+  ID?: number;
+}
+
+export default function OpportunityForm({
+  onSuccess,
+  onCancel,
+}: OpportunityFormProps) {
   const [loading, setLoading] = useState(false);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<TagWithId[]>([]);
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [tagSearch, setTagSearch] = useState("");
+  const [showAddTagModal, setShowAddTagModal] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagDescription, setNewTagDescription] = useState("");
+  const [addingTag, setAddingTag] = useState(false);
+
   const [formData, setFormData] = useState<FormData>({
-    title: "",
-    description: "",
+    name: "",
+    details: "",
     requirements: "",
-    compensation: "",
+    reward: "",
     type: "",
-    duration: "",
-    location: "",
-    is_remote: false,
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
-
-  useEffect(() => {
-    fetchTags();
-  }, []);
 
   const fetchTags = async () => {
     try {
@@ -53,44 +57,98 @@ export default function OpportunityForm({ onSuccess, onCancel }: OpportunityForm
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
+  useEffect(() => {
+    fetchTags();
+  }, []);
 
+  // Filter tags based on search - exclude already selected tags
+  const filteredTags = useMemo(() => {
+    const searchLower = tagSearch.toLowerCase().trim();
+    return tags.filter(
+      (tag) =>
+        !selectedTags.includes(Number(tag.ID || tag.id)) &&
+        tag.name?.toLowerCase().includes(searchLower)
+    );
+  }, [tags, tagSearch, selectedTags]);
+
+  // Get selected tag objects for display
+  const selectedTagObjects = useMemo(() => {
+    return tags.filter((tag) =>
+      selectedTags.includes(Number(tag.ID || tag.id))
+    );
+  }, [tags, selectedTags]);
+
+  const handleAddTag = (tagId: number) => {
+    if (!selectedTags.includes(tagId)) {
+      setSelectedTags((prev) => [...prev, tagId]);
+      setTagSearch("");
+    }
+  };
+
+  const handleRemoveTag = (tagId: number) => {
+    setSelectedTags((prev) => prev.filter((id) => id !== tagId));
+  };
+
+  const handleCreateTag = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTagName.trim()) {
+      toast.error("Tag name is required");
+      return;
+    }
+
+    setAddingTag(true);
+    try {
+      const newTag = await tagApi.create({
+        name: newTagName.trim(),
+        category: newTagDescription.trim() || undefined,
+      });
+      toast.success("Tag created successfully!");
+      setShowAddTagModal(false);
+      setNewTagName("");
+      setNewTagDescription("");
+      // Refetch tags and auto-select the new one
+      await fetchTags();
+      if (newTag?.id) {
+        setSelectedTags((prev) => [...prev, Number(newTag.id)]);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create tag"
+      );
+    } finally {
+      setAddingTag(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
 
-    // Clear error when field is modified
     if (errors[name as keyof FormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleTagToggle = (tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
-
   const validate = (): boolean => {
     const newErrors: Partial<FormData> = {};
 
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
-    } else if (formData.title.length < 3) {
-      newErrors.title = "Title must be at least 3 characters";
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
-    } else if (formData.description.length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
+    if (!formData.details.trim()) {
+      newErrors.details = "Details are required";
+    } else if (formData.details.length < 10) {
+      newErrors.details = "Details must be at least 10 characters";
     }
 
     if (!formData.type) {
@@ -109,15 +167,12 @@ export default function OpportunityForm({ onSuccess, onCancel }: OpportunityForm
     setLoading(true);
     try {
       await opportunityApi.create({
-        title: formData.title,
-        description: formData.description,
-        requirements: formData.requirements,
-        compensation: formData.compensation,
-        type: formData.type as "research" | "project" | "internship",
-        duration: formData.duration,
-        location: formData.location,
-        is_remote: formData.is_remote,
-        skills_needed: selectedTags.map((id) => tags.find((t) => t.id === id)?.name || ""),
+        name: formData.name,
+        details: formData.details,
+        requirements: formData.requirements || undefined,
+        reward: formData.reward || undefined,
+        type: formData.type,
+        tag_ids: selectedTags,
       });
 
       toast.success("Opportunity created successfully!");
@@ -132,47 +187,47 @@ export default function OpportunityForm({ onSuccess, onCancel }: OpportunityForm
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        label="Opportunity Title"
-        name="title"
-        placeholder="e.g., Machine Learning Research Assistant"
-        value={formData.title}
-        onChange={handleChange}
-        error={errors.title}
-        required
-      />
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Opportunity Name"
+          name="name"
+          placeholder="e.g., Machine Learning Research Assistant"
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+          required
+        />
 
-      <Textarea
-        label="Description"
-        name="description"
-        placeholder="Describe the opportunity, responsibilities, and what students will learn..."
-        value={formData.description}
-        onChange={handleChange}
-        error={errors.description}
-        rows={5}
-        required
-      />
+        <Textarea
+          label="Details"
+          name="details"
+          placeholder="Describe the opportunity, responsibilities, and what students will learn..."
+          value={formData.details}
+          onChange={handleChange}
+          error={errors.details}
+          rows={5}
+          required
+        />
 
-      <Textarea
-        label="Requirements (optional)"
-        name="requirements"
-        placeholder="e.g., Experience with Python, Strong foundation in mathematics"
-        value={formData.requirements}
-        onChange={handleChange}
-        rows={3}
-      />
+        <Textarea
+          label="Requirements (optional)"
+          name="requirements"
+          placeholder="e.g., Experience with Python, Strong foundation in mathematics"
+          value={formData.requirements}
+          onChange={handleChange}
+          rows={3}
+        />
 
-      <Textarea
-        label="Compensation (optional)"
-        name="compensation"
-        placeholder="e.g., Research credit, Letter of recommendation, $500 stipend"
-        value={formData.compensation}
-        onChange={handleChange}
-        rows={2}
-      />
+        <Textarea
+          label="Reward (optional)"
+          name="reward"
+          placeholder="e.g., Research credit, Letter of recommendation, $500 stipend"
+          value={formData.reward}
+          onChange={handleChange}
+          rows={2}
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
           label="Type"
           name="type"
@@ -187,84 +242,187 @@ export default function OpportunityForm({ onSuccess, onCancel }: OpportunityForm
           <option value={OPPORTUNITY_TYPES.INTERNSHIP}>Internship</option>
         </Select>
 
-        <Input
-          label="Duration (optional)"
-          name="duration"
-          placeholder="e.g., 3 months, 1 semester"
-          value={formData.duration}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Location (optional)"
-          name="location"
-          placeholder="e.g., Room 301, Engineering Building"
-          value={formData.location}
-          onChange={handleChange}
-        />
-
-        <div className="flex items-center gap-2 pt-8">
-          <input
-            type="checkbox"
-            id="is_remote"
-            name="is_remote"
-            checked={formData.is_remote}
-            onChange={handleChange}
-            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-          <label htmlFor="is_remote" className="text-sm text-muted">
-            This is a remote opportunity
-          </label>
-        </div>
-      </div>
-
-      {/* Tags */}
-      {tags.length > 0 && (
+        {/* Tags Section */}
         <div>
-          <label className="input-label">Tags (optional)</label>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => handleTagToggle(tag.id)}
-                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                  selectedTags.includes(tag.id)
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 dark:bg-gray-800 text-muted hover:bg-gray-200 dark:hover:bg-gray-700"
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+          <label className="block text-sm font-medium text-heading mb-2">
+            Required Skills / Tags
+          </label>
 
-      <div className="flex gap-3 pt-4">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-        )}
-        <Button type="submit" disabled={loading} className="flex-1">
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            "Create Opportunity"
+          {/* Selected Tags */}
+          {selectedTagObjects.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedTagObjects.map((tag) => (
+                <span
+                  key={tag.ID || tag.id}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-blue-600 text-white"
+                >
+                  {tag.name}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveTag(Number(tag.ID || tag.id))
+                    }
+                    className="hover:bg-blue-700 rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
           )}
-        </Button>
-      </div>
-    </form>
+
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
+            <input
+              type="text"
+              value={tagSearch}
+              onChange={(e) => setTagSearch(e.target.value)}
+              placeholder="Search tags..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg bg-transparent border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          {/* Tag Search Results */}
+          {tagSearch && (
+            <div className="mt-2 max-h-40 overflow-y-auto border rounded-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-0">
+              {filteredTags.length > 0 ? (
+                <div className="p-2 space-y-1">
+                  {filteredTags.map((tag) => (
+                    <button
+                      key={tag.ID || tag.id}
+                      type="button"
+                      onClick={() =>
+                        handleAddTag(Number(tag.ID || tag.id))
+                      }
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                    >
+                      <div className="font-medium text-sm text-heading">
+                        {tag.name}
+                      </div>
+                      {tag.category && (
+                        <div className="text-xs text-muted">{tag.category}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-muted">
+                  <p className="text-sm mb-2">
+                    No tags found for &quot;{tagSearch}&quot;
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setNewTagName(tagSearch);
+                      setShowAddTagModal(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create &quot;{tagSearch}&quot;
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Available Tags (when not searching) */}
+          {!tagSearch && filteredTags.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs text-muted mb-2">
+                Available tags (click to add):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {filteredTags.slice(0, 10).map((tag) => (
+                  <button
+                    key={tag.ID || tag.id}
+                    type="button"
+                    onClick={() =>
+                      handleAddTag(Number(tag.ID || tag.id))
+                    }
+                    className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-heading hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+                {filteredTags.length > 10 && (
+                  <span className="px-3 py-1 text-sm text-muted">
+                    +{filteredTags.length - 10} more (use search)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Add New Tag Button */}
+          <button
+            type="button"
+            onClick={() => setShowAddTagModal(true)}
+            className="mt-3 inline-flex items-center text-sm text-primary hover:underline"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Create new tag
+          </button>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <Button type="submit" disabled={loading} className="flex-1">
+            {loading ? "Creating..." : "Create Opportunity"}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </div>
+      </form>
+
+      {/* Add Tag Modal */}
+      <Modal
+        isOpen={showAddTagModal}
+        onClose={() => {
+          setShowAddTagModal(false);
+          setNewTagName("");
+          setNewTagDescription("");
+        }}
+        title="Create New Tag"
+        size="md"
+      >
+        <form onSubmit={handleCreateTag} className="space-y-4">
+          <Input
+            label="Tag Name"
+            placeholder="e.g., Python, Machine Learning, Data Analysis"
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+            required
+          />
+          <Textarea
+            label="Description (optional)"
+            placeholder="Brief description of this skill or tag"
+            rows={2}
+            value={newTagDescription}
+            onChange={(e) => setNewTagDescription(e.target.value)}
+          />
+          <div className="flex gap-3 pt-2">
+            <Button type="submit" disabled={addingTag} className="flex-1">
+              {addingTag ? "Creating..." : "Create Tag"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setShowAddTagModal(false);
+                setNewTagName("");
+                setNewTagDescription("");
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }

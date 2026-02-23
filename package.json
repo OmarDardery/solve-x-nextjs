@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:docker": "next dev --turbopack=false",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

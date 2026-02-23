@@ -61,7 +61,7 @@ export default function OpportunityDetailPage({
     setApplying(true);
     try {
       await applicationApi.apply(id, {
-        cover_letter: coverLetter,
+        message: coverLetter,
       });
       toast.success("Application submitted successfully!");
       setShowApplyModal(false);
@@ -123,7 +123,7 @@ export default function OpportunityDetailPage({
                 {getTypeLabel(opportunity.type)}
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-bold text-heading">
-                {opportunity.title}
+                {opportunity.name}
               </h1>
             </div>
             {isStudent && (
@@ -154,7 +154,7 @@ export default function OpportunityDetailPage({
               Description
             </h3>
             <p className="text-muted whitespace-pre-wrap">
-              {opportunity.description}
+              {opportunity.details}
             </p>
           </div>
 
@@ -169,30 +169,24 @@ export default function OpportunityDetailPage({
             </div>
           )}
 
-          {opportunity.drive_link && (
+          {opportunity.reward && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-heading mb-2">
-                Additional Materials
+                Reward
               </h3>
-              <a
-                href={opportunity.drive_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary hover:underline"
-              >
-                <ExternalLink className="w-4 h-4" />
-                View Materials
-              </a>
+              <p className="text-muted whitespace-pre-wrap">
+                {opportunity.reward}
+              </p>
             </div>
           )}
 
-          {opportunity.tags && opportunity.tags.length > 0 && (
+          {opportunity.requirement_tags && opportunity.requirement_tags.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-heading mb-2">
                 Skills & Tags
               </h3>
               <div className="flex flex-wrap gap-2">
-                {opportunity.tags.map((tag, idx) => (
+                {opportunity.requirement_tags.map((tag, idx) => (
                   <Badge key={idx} variant="default">
                     {tag.name}
                   </Badge>
@@ -207,7 +201,7 @@ export default function OpportunityDetailPage({
       <Modal
         isOpen={showApplyModal}
         onClose={() => setShowApplyModal(false)}
-        title={`Apply: ${opportunity.title}`}
+        title={`Apply: ${opportunity.name}`}
       >
         <div className="space-y-4">
           <div>

@@ -1,130 +1,148 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, ArrowLeft, Loader2, Check } from "lucide-react";
+import { CheckCircle, XCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input, Select, Textarea } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
+import { Input, Select } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Modal } from "@/components/ui/Modal";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import {
-  USER_ROLES,
-  buildEmail,
-  getDomainsForRole,
-  type UserRole,
-} from "@/lib/types";
-
-type SignupStep = "role" | "email" | "verify" | "details" | "password";
-
-interface FormData {
-  role: UserRole | null;
-  identifier: string;
-  domain: string;
-  email: string;
-  verificationCode: string;
-  name: string;
-  studentId: string;
-  department: string;
-  bio: string;
-  password: string;
-  confirmPassword: string;
-  // Organization specific
-  organizationName: string;
-  industry: string;
-  website: string;
-  description: string;
-}
+import { USER_ROLES, getDomainsForRole, buildEmail, type UserRole } from "@/lib/types";
 
 function SignupContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role") as UserRole | null;
-
-  const [step, setStep] = useState<SignupStep>(roleParam ? "email" : "role");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [codeVerified, setCodeVerified] = useState(false);
-
-  const [formData, setFormData] = useState<FormData>({
-    role: roleParam,
+  const [step, setStep] = useState(1); // 1: role + identifier, 2: code + details
+  const [formData, setFormData] = useState({
     identifier: "",
-    domain: roleParam ? getDomainsForRole(roleParam)[0] || "" : "",
-    email: "",
+    domain: "",
     verificationCode: "",
-    name: "",
-    studentId: "",
-    department: "",
-    bio: "",
     password: "",
     confirmPassword: "",
-    organizationName: "",
-    industry: "",
-    website: "",
-    description: "",
+    role: "" as UserRole | "",
+    firstName: "",
+    lastName: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [availableDomains, setAvailableDomains] = useState<string[]>([]);
 
-  const isOrganization = formData.role === USER_ROLES.ORGANIZATION;
-
-  const updateFormData = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleRoleSelect = (role: UserRole) => {
-    const domains = getDomainsForRole(role);
-    setFormData((prev) => ({
-      ...prev,
-      role,
-      domain: domains[0] || "",
-    }));
-    setStep("email");
-  };
-
-  const handleBack = () => {
-    switch (step) {
-      case "email":
-        setStep("role");
-        break;
-      case "verify":
-        setStep("email");
-        setCodeVerified(false);
-        break;
-      case "details":
-        setStep("verify");
-        break;
-      case "password":
-        setStep("details");
-        break;
-    }
-  };
-
-  const handleSendCode = async () => {
-    if (isOrganization && !formData.email) {
-      toast.error("Please enter your email");
-      return;
-    }
-    if (!isOrganization && !formData.identifier) {
-      toast.error("Please enter your identifier");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      let email = formData.email;
-      if (!isOrganization) {
-        email = buildEmail(formData.identifier, formData.domain);
-        updateFormData("email", email);
+  // Update available domains when role changes
+  useEffect(() => {
+    if (formData.role) {
+      const domains = getDomainsForRole(formData.role);
+      setAvailableDomains(domains);
+      if (domains.length > 0) {
+        setFormData((prev) => ({ ...prev, domain: domains[0] }));
       }
+    } else {
+      setAvailableDomains([]);
+      setFormData((prev) => ({ ...prev, domain: "" }));
+    }
+  }, [formData.role]);
 
+  // Navigate after signup
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        const dashboardPaths: Record<string, string> = {
+          [USER_ROLES.PROFESSOR]: "/dashboard/professor",
+          [USER_ROLES.STUDENT]: "/dashboard/student",
+          [USER_ROLES.ORGANIZATION]: "/dashboard/organization",
+        };
+        router.push(dashboardPaths[formData.role] || "/dashboard");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal, router, formData.role]);
+
+  const getIdentifierPlaceholder = () => {
+    if (formData.role === USER_ROLES.STUDENT) return "2x-xxxxxx";
+    if (formData.role === USER_ROLES.PROFESSOR) return "firstname.lastname";
+    return "Enter your identifier";
+  };
+
+  const getIdentifierLabel = () => {
+    if (formData.role === USER_ROLES.STUDENT) return "Student ID";
+    if (formData.role === USER_ROLES.PROFESSOR) return "Username";
+    return "Identifier";
+  };
+
+  const validateIdentifier = (identifier: string) => {
+    if (!identifier) return "Identifier is required";
+    if (formData.role === USER_ROLES.STUDENT) {
+      if (!/^2\d-\d{6}$/.test(identifier)) {
+        return "Invalid student ID format (e.g., 21-101234)";
+      }
+    }
+    return null;
+  };
+
+  const validateStep1 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.role) newErrors.role = "Please select a role";
+    const identifierError = validateIdentifier(formData.identifier);
+    if (identifierError) newErrors.identifier = identifierError;
+    if (!formData.domain) newErrors.domain = "Domain is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.verificationCode) {
+      newErrors.verificationCode = "Verification code is required";
+    } else if (!/^\d{6}$/.test(formData.verificationCode)) {
+      newErrors.verificationCode = "Code must be 6 digits";
+    }
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
+  const getFullEmail = () => buildEmail(formData.identifier, formData.domain);
+
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateStep1()) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const email = getFullEmail();
       const response = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, role: formData.role, purpose: "signup" }),
       });
 
       if (!response.ok) {
@@ -133,594 +151,318 @@ function SignupContent() {
       }
 
       toast.success("Verification code sent to your email!");
-      setStep("verify");
+      setCodeSent(true);
+      setStep(2);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to send code"
-      );
+      const errorMsg = error instanceof Error ? error.message : "Failed to send verification code";
+      toast.error(errorMsg);
+      setErrors({ identifier: errorMsg });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleVerifyCode = async () => {
-    if (!formData.verificationCode) {
-      toast.error("Please enter the verification code");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateStep2()) {
+      toast.error("Please fix the errors in the form");
       return;
     }
 
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const response = await fetch("/api/auth/verify-code", {
+      const email = getFullEmail();
+      const response = await fetch(`/api/auth/sign-up/${formData.role}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: formData.email,
-          code: formData.verificationCode,
+          code: parseInt(formData.verificationCode),
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email,
+          password: formData.password,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Invalid verification code");
-      }
-
-      setCodeVerified(true);
-      toast.success("Email verified!");
-      setStep("details");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Verification failed"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDetailsSubmit = () => {
-    if (isOrganization) {
-      if (!formData.organizationName) {
-        toast.error("Please enter your organization name");
-        return;
-      }
-    } else {
-      if (!formData.name) {
-        toast.error("Please enter your name");
-        return;
-      }
-    }
-    setStep("password");
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.password || !formData.confirmPassword) {
-      toast.error("Please fill in both password fields");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Prepare signup data based on role
-      const signupData: Record<string, unknown> = {
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      };
-
-      if (isOrganization) {
-        signupData.name = formData.organizationName;
-        signupData.industry = formData.industry;
-        signupData.website = formData.website;
-        signupData.description = formData.description;
-      } else {
-        signupData.name = formData.name;
-        signupData.department = formData.department;
-        signupData.bio = formData.bio;
-        if (formData.role === USER_ROLES.STUDENT) {
-          signupData.student_id = formData.studentId || formData.identifier;
-        }
-      }
-
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Signup failed");
+        throw new Error(data.error || "Failed to create account");
       }
 
       // Auto-login after signup
       const result = await signIn("credentials", {
-        email: formData.email,
+        email,
         password: formData.password,
         role: formData.role,
         redirect: false,
       });
 
       if (result?.error) {
+        setShowSuccessModal(true);
         toast.success("Account created! Please log in.");
-        router.push("/login");
       } else {
-        toast.success("Welcome to SolveX!");
-        router.push("/dashboard");
-        router.refresh();
+        setShowSuccessModal(true);
+        toast.success("Account created successfully!");
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "An error occurred"
-      );
+      const errorMsg = error instanceof Error ? error.message : "Failed to create account";
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+      toast.error(errorMsg);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Role selection screen
-  if (step === "role") {
-    return (
-      <div className="min-h-screen auth-bg flex flex-col">
-        <div className="absolute top-4 right-4">
-          <ThemeToggle />
-        </div>
-
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-md space-y-8">
-            <div className="text-center">
-              <div className="flex justify-center mb-6">
-                <Logo width={180} height={60} />
-              </div>
-              <h1 className="text-2xl font-bold text-heading">
-                Create Account
-              </h1>
-              <p className="mt-2 text-muted">
-                Select your role to get started
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.STUDENT)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">🎓</div>
-                <h3 className="text-lg font-semibold text-heading">Student</h3>
-                <p className="text-sm text-muted mt-1">
-                  Find opportunities and build your career
-                </p>
-              </Card>
-
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.PROFESSOR)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">👨‍🏫</div>
-                <h3 className="text-lg font-semibold text-heading">Professor</h3>
-                <p className="text-sm text-muted mt-1">
-                  Post research opportunities and mentor students
-                </p>
-              </Card>
-
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.ORGANIZATION)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">🏢</div>
-                <h3 className="text-lg font-semibold text-heading">
-                  Organization
-                </h3>
-                <p className="text-sm text-muted mt-1">
-                  Connect with talented students for internships
-                </p>
-              </Card>
-            </div>
-
-            <p className="text-center text-sm text-muted">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen auth-bg flex flex-col">
+    <div className="auth-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-
-      <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-muted hover:text-heading transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Logo width={150} height={50} />
-            </div>
-            <h1 className="text-2xl font-bold text-heading">
-              {step === "email" && "Enter Your Email"}
-              {step === "verify" && "Verify Email"}
-              {step === "details" && "Your Details"}
-              {step === "password" && "Create Password"}
-            </h1>
-            <p className="mt-2 text-muted">
-              {step === "email" &&
-                (isOrganization
-                  ? "Enter your organization email"
-                  : "Enter your university email")}
-              {step === "verify" && "Enter the code sent to your email"}
-              {step === "details" && "Tell us about yourself"}
-              {step === "password" && "Choose a strong password"}
-            </p>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex justify-center mb-4">
+            <Logo className="h-16 sm:h-20" />
           </div>
-
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            {["email", "verify", "details", "password"].map((s, i) => (
-              <div
-                key={s}
-                className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                  step === s
-                    ? "bg-primary"
-                    : i <
-                      ["email", "verify", "details", "password"].indexOf(step)
-                    ? "bg-green-500"
-                    : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Email Step */}
-          {step === "email" && (
-            <div className="space-y-6">
-              {isOrganization ? (
-                <Input
-                  label="Organization Email"
-                  type="email"
-                  placeholder="contact@company.com"
-                  value={formData.email}
-                  onChange={(e) => updateFormData("email", e.target.value)}
-                  required
-                />
-              ) : (
-                <>
-                  <Input
-                    label={
-                      formData.role === USER_ROLES.STUDENT
-                        ? "Student ID"
-                        : "Email Identifier"
-                    }
-                    type="text"
-                    placeholder={
-                      formData.role === USER_ROLES.STUDENT
-                        ? "e.g., 2x-xxxxxx"
-                        : "e.g., john.doe"
-                    }
-                    value={formData.identifier}
-                    onChange={(e) =>
-                      updateFormData("identifier", e.target.value)
-                    }
-                    required
-                  />
-
-                  {getDomainsForRole(formData.role!).length > 1 && (
-                    <Select
-                      label="Email Domain"
-                      value={formData.domain}
-                      onChange={(e) => updateFormData("domain", e.target.value)}
-                    >
-                      {getDomainsForRole(formData.role!).map((domain) => (
-                        <option key={domain} value={domain}>
-                          @{domain}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-
-                  {formData.domain && (
-                    <p className="text-sm text-muted">
-                      Your email:{" "}
-                      <span className="text-heading">
-                        {formData.identifier
-                          ? buildEmail(formData.identifier, formData.domain)
-                          : `...@${formData.domain}`}
-                      </span>
-                    </p>
-                  )}
-                </>
-              )}
-
-              <Button
-                onClick={handleSendCode}
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending code...
-                  </>
-                ) : (
-                  "Send Verification Code"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Verify Step */}
-          {step === "verify" && (
-            <div className="space-y-6">
-              <p className="text-sm text-center text-muted">
-                We sent a code to{" "}
-                <span className="font-medium text-heading">
-                  {formData.email}
-                </span>
-              </p>
-
-              <Input
-                label="Verification Code"
-                type="text"
-                placeholder="Enter 6-digit code"
-                value={formData.verificationCode}
-                onChange={(e) =>
-                  updateFormData("verificationCode", e.target.value)
-                }
-                maxLength={6}
+          <CardTitle className="text-center">Create an Account</CardTitle>
+          <CardDescription className="text-center">
+            {step === 1 ? "Select your role and enter your credentials" : "Complete your registration"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Step 1: Role + Identifier */}
+          {step === 1 && (
+            <form onSubmit={handleSendCode} className="space-y-4">
+              <Select
+                name="role"
+                label="Role"
+                value={formData.role}
+                onChange={handleChange}
+                error={errors.role}
                 required
-              />
-
-              <Button
-                onClick={handleVerifyCode}
-                className="w-full"
-                disabled={isLoading || codeVerified}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Verifying...
-                  </>
-                ) : codeVerified ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Verified
-                  </>
-                ) : (
-                  "Verify Code"
-                )}
-              </Button>
+                <option value="">Select a role</option>
+                <option value={USER_ROLES.STUDENT}>Student</option>
+                <option value={USER_ROLES.PROFESSOR}>Professor</option>
+              </Select>
 
-              <button
-                onClick={handleSendCode}
-                className="w-full text-sm text-primary hover:underline"
-                disabled={isLoading}
-              >
-                Resend code
-              </button>
-            </div>
-          )}
-
-          {/* Details Step */}
-          {step === "details" && (
-            <div className="space-y-6">
-              {isOrganization ? (
-                <>
-                  <Input
-                    label="Organization Name"
-                    type="text"
-                    placeholder="Company Inc."
-                    value={formData.organizationName}
-                    onChange={(e) =>
-                      updateFormData("organizationName", e.target.value)
-                    }
-                    required
-                  />
-
-                  <Input
-                    label="Industry"
-                    type="text"
-                    placeholder="e.g., Technology, Finance"
-                    value={formData.industry}
-                    onChange={(e) => updateFormData("industry", e.target.value)}
-                  />
-
-                  <Input
-                    label="Website"
-                    type="url"
-                    placeholder="https://company.com"
-                    value={formData.website}
-                    onChange={(e) => updateFormData("website", e.target.value)}
-                  />
-
-                  <Textarea
-                    label="Description"
-                    placeholder="Tell us about your organization..."
-                    value={formData.description}
-                    onChange={(e) =>
-                      updateFormData("description", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </>
-              ) : (
-                <>
-                  <Input
-                    label="Full Name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={(e) => updateFormData("name", e.target.value)}
-                    required
-                  />
-
-                  {formData.role === USER_ROLES.STUDENT && (
-                    <Input
-                      label="Student ID"
-                      type="text"
-                      placeholder="e.g., 2x-xxxxxx"
-                      value={formData.studentId || formData.identifier}
-                      onChange={(e) =>
-                        updateFormData("studentId", e.target.value)
-                      }
-                    />
-                  )}
-
-                  <Input
-                    label="Department"
-                    type="text"
-                    placeholder="e.g., Computer Science"
-                    value={formData.department}
-                    onChange={(e) =>
-                      updateFormData("department", e.target.value)
-                    }
-                  />
-
-                  <Textarea
-                    label="Bio"
-                    placeholder="Tell us about yourself..."
-                    value={formData.bio}
-                    onChange={(e) => updateFormData("bio", e.target.value)}
-                    rows={3}
-                  />
-                </>
-              )}
-
-              <Button onClick={handleDetailsSubmit} className="w-full">
-                Continue
-              </Button>
-            </div>
-          )}
-
-          {/* Password Step */}
-          {step === "password" && (
-            <form onSubmit={handleSignup} className="space-y-6">
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="At least 8 characters"
-                  value={formData.password}
-                  onChange={(e) => updateFormData("password", e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-muted hover:text-heading transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              <div className="relative">
-                <Input
-                  label="Confirm Password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Re-enter your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    updateFormData("confirmPassword", e.target.value)
-                  }
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-9 text-muted hover:text-heading transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              {formData.password && formData.confirmPassword && (
-                <div className="flex items-center gap-2 text-sm">
-                  {formData.password === formData.confirmPassword ? (
-                    <>
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-green-500">Passwords match</span>
-                    </>
-                  ) : (
-                    <span className="text-red-500">Passwords do not match</span>
+              {formData.role && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-heading">
+                    {getIdentifierLabel()} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        name="identifier"
+                        placeholder={getIdentifierPlaceholder()}
+                        value={formData.identifier}
+                        onChange={handleChange}
+                        error={errors.identifier}
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center text-muted pt-2">@</div>
+                    <div className="flex-1">
+                      <Select
+                        name="domain"
+                        value={formData.domain}
+                        onChange={handleChange}
+                        disabled={availableDomains.length <= 1}
+                        error={errors.domain}
+                      >
+                        {availableDomains.map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  {formData.identifier && formData.domain && (
+                    <p className="text-xs text-muted mt-1">Email: {getFullEmail()}</p>
                   )}
                 </div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating account...
-                  </>
+              <Button type="submit" className="w-full" disabled={loading || !formData.role}>
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Sending code...
+                  </span>
                 ) : (
-                  "Create Account"
+                  <span className="flex items-center justify-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Send Verification Code
+                  </span>
                 )}
               </Button>
             </form>
           )}
 
-          <p className="text-center text-sm text-muted mt-6">
+          {/* Step 2: Verification Code + Details */}
+          {step === 2 && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <Mail className="w-4 h-4 inline mr-1" />
+                  A verification code has been sent to <strong>{getFullEmail()}</strong>
+                </p>
+              </div>
+
+              <Input
+                type="text"
+                name="verificationCode"
+                label="Verification Code"
+                placeholder="Enter 6-digit code"
+                value={formData.verificationCode}
+                onChange={handleChange}
+                error={errors.verificationCode}
+                maxLength={6}
+                required
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  type="text"
+                  name="firstName"
+                  label="First Name"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  error={errors.firstName}
+                  required
+                />
+                <Input
+                  type="text"
+                  name="lastName"
+                  label="Last Name"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  error={errors.lastName}
+                  required
+                />
+              </div>
+
+              <Input
+                type="password"
+                name="password"
+                label="Password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+                required
+              />
+
+              <Input
+                type="password"
+                name="confirmPassword"
+                label="Confirm Password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={errors.confirmPassword}
+                required
+              />
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-1/3"
+                  onClick={() => {
+                    setStep(1);
+                    setCodeSent(false);
+                  }}
+                  disabled={loading}
+                >
+                  Back
+                </Button>
+                <Button type="submit" className="w-2/3" disabled={loading}>
+                  {loading ? "Creating account..." : "Create Account"}
+                </Button>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-sm"
+                onClick={handleSendCode}
+                disabled={loading}
+              >
+                Resend verification code
+              </Button>
+            </form>
+          )}
+
+          <p className="mt-6 text-center text-sm text-body">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="text-primary font-medium hover:underline">
               Sign in
             </Link>
           </p>
-        </Card>
-      </div>
-    </div>
-  );
-}
+          <p className="mt-2 text-center text-sm text-body">
+            Are you an organization?{" "}
+            <Link href="/signup/organization" className="text-primary font-medium hover:underline">
+              Sign up here
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
 
-function SignupFallback() {
-  return (
-    <div className="min-h-screen auth-bg flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      {/* Success Modal */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title=""
+        size="sm"
+      >
+        <div className="text-center py-6">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-heading mb-2">Account Created Successfully!</h3>
+          <p className="text-body mb-4">
+            Your account has been created. You will be redirected to your dashboard shortly.
+          </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+            <span>Redirecting...</span>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title=""
+        size="sm"
+      >
+        <div className="text-center py-6">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-heading mb-2">Sign Up Failed</h3>
+          <p className="text-body mb-4">{errorMessage}</p>
+          <Button onClick={() => setShowErrorModal(false)} className="w-full">
+            Try Again
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<SignupFallback />}>
+    <Suspense fallback={<div className="min-h-screen auth-bg flex items-center justify-center">Loading...</div>}>
       <SignupContent />
     </Suspense>
   );

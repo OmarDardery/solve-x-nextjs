@@ -122,7 +122,7 @@ export default function ApplicationsPage() {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-heading">
-                          {application.opportunity?.title || "Opportunity"}
+                          {application.opportunity?.name || "Opportunity"}
                         </h3>
                         <p className="text-sm text-muted mt-1">
                           {userRole === USER_ROLES.STUDENT
@@ -131,15 +131,15 @@ export default function ApplicationsPage() {
                                   ? new Date(application.created_at).toLocaleDateString()
                                   : "N/A"
                               }`
-                            : `${application.student?.name || "Student"} • Applied ${
+                            : `${application.student?.first_name || ""} ${application.student?.last_name || "Student"} • Applied ${
                                 application.created_at
                                   ? new Date(application.created_at).toLocaleDateString()
                                   : "N/A"
                               }`}
                         </p>
-                        {application.cover_letter && (
+                        {application.message && (
                           <p className="text-sm text-muted mt-2 line-clamp-2">
-                            {application.cover_letter}
+                            {application.message}
                           </p>
                         )}
                       </div>

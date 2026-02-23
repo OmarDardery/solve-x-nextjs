@@ -45,8 +45,8 @@ export default function OpportunitiesPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (opp) =>
-          opp.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          opp.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          opp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          opp.details?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -127,22 +127,22 @@ export default function OpportunitiesPage() {
                   </Badge>
                 </div>
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 line-clamp-2 text-heading">
-                  {opportunity.title}
+                  {opportunity.name}
                 </h3>
                 <p className="text-muted text-sm mb-4 line-clamp-3">
-                  {opportunity.description}
+                  {opportunity.details}
                 </p>
 
-                {opportunity.tags && opportunity.tags.length > 0 && (
+                {opportunity.requirement_tags && opportunity.requirement_tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {opportunity.tags.slice(0, 3).map((tag, idx) => (
+                    {opportunity.requirement_tags.slice(0, 3).map((tag, idx) => (
                       <Badge key={idx} variant="default" className="text-xs">
                         {tag.name}
                       </Badge>
                     ))}
-                    {opportunity.tags.length > 3 && (
+                    {opportunity.requirement_tags.length > 3 && (
                       <Badge variant="default" className="text-xs">
-                        +{opportunity.tags.length - 3}
+                        +{opportunity.requirement_tags.length - 3}
                       </Badge>
                     )}
                   </div>

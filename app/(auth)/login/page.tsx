@@ -1,319 +1,224 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import {
-  USER_ROLES,
-  buildEmail,
-  getDomainsForRole,
-  type UserRole,
-} from "@/lib/types";
+import { USER_ROLES, getDomainsForRole, buildEmail, type UserRole } from "@/lib/types";
 
 function LoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role") as UserRole | null;
-
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(roleParam);
   const [identifier, setIdentifier] = useState("");
-  const [selectedDomain, setSelectedDomain] = useState("");
+  const [domain, setDomain] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState<UserRole | "">("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [availableDomains, setAvailableDomains] = useState<string[]>([]);
 
-  // Organization has its own login flow
-  const isOrganization = selectedRole === USER_ROLES.ORGANIZATION;
+  // Update available domains when role changes
+  useEffect(() => {
+    if (role) {
+      const domains = getDomainsForRole(role);
+      setAvailableDomains(domains);
+      if (domains.length > 0) {
+        setDomain(domains[0]);
+      }
+    } else {
+      setAvailableDomains([]);
+      setDomain("");
+    }
+  }, [role]);
 
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    // Set default domain for the role
-    const domains = getDomainsForRole(role);
-    setSelectedDomain(domains[0] || "");
-    // Clear form
-    setIdentifier("");
-    setPassword("");
+  const getIdentifierPlaceholder = () => {
+    if (role === USER_ROLES.STUDENT) return "2x-xxxxxx";
+    if (role === USER_ROLES.PROFESSOR) return "firstname.lastname";
+    return "Enter your identifier";
   };
 
-  const handleBack = () => {
-    setSelectedRole(null);
-    setIdentifier("");
-    setSelectedDomain("");
-    setPassword("");
+  const getIdentifierLabel = () => {
+    if (role === USER_ROLES.STUDENT) return "Student ID";
+    if (role === USER_ROLES.PROFESSOR) return "Username";
+    return "Identifier";
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const getFullEmail = () => buildEmail(identifier, domain);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedRole) {
-      toast.error("Please select a role");
+    // Validate form
+    const newErrors: Record<string, string> = {};
+    if (!role) newErrors.role = "Please select your role";
+    if (!identifier) newErrors.identifier = "Identifier is required";
+    if (!domain) newErrors.domain = "Domain is required";
+    if (!password) newErrors.password = "Password is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please fix the errors in the form");
       return;
     }
 
-    if (!identifier || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    setIsLoading(true);
+    setLoading(true);
+    setErrors({});
 
     try {
-      let email = identifier;
-
-      // For students and professors, build the email
-      if (!isOrganization && selectedDomain) {
-        email = buildEmail(identifier, selectedDomain);
-      }
-
+      const email = getFullEmail();
       const result = await signIn("credentials", {
         email,
         password,
-        role: selectedRole,
+        role,
         redirect: false,
       });
 
       if (result?.error) {
-        toast.error(result.error || "Login failed");
+        toast.error(result.error || "Invalid credentials");
+        setLoading(false);
       } else {
-        toast.success("Welcome back!");
-        router.push("/dashboard");
+        toast.success("Logged in successfully!");
+        // Get dashboard path based on role
+        const dashboardPaths: Record<string, string> = {
+          [USER_ROLES.PROFESSOR]: "/dashboard/professor",
+          [USER_ROLES.STUDENT]: "/dashboard/student",
+          [USER_ROLES.ORGANIZATION]: "/dashboard/organization",
+        };
+        router.push(dashboardPaths[role] || "/dashboard");
         router.refresh();
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Role selection screen
-  if (!selectedRole) {
-    return (
-      <div className="min-h-screen auth-bg flex flex-col">
-        <div className="absolute top-4 right-4">
-          <ThemeToggle />
-        </div>
-
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-md space-y-8">
-            <div className="text-center">
-              <div className="flex justify-center mb-6">
-                <Logo width={180} height={60} />
-              </div>
-              <h1 className="text-2xl font-bold text-heading">Welcome Back</h1>
-              <p className="mt-2 text-muted">
-                Select your role to continue to your account
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.STUDENT)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">🎓</div>
-                <h3 className="text-lg font-semibold text-heading">Student</h3>
-                <p className="text-sm text-muted mt-1">
-                  Find opportunities and build your career
-                </p>
-              </Card>
-
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.PROFESSOR)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">👨‍🏫</div>
-                <h3 className="text-lg font-semibold text-heading">Professor</h3>
-                <p className="text-sm text-muted mt-1">
-                  Post research opportunities and mentor students
-                </p>
-              </Card>
-
-              <Card
-                hover
-                onClick={() => handleRoleSelect(USER_ROLES.ORGANIZATION)}
-                className="p-6 text-center cursor-pointer transition-all hover:scale-[1.02]"
-              >
-                <div className="text-4xl mb-3">🏢</div>
-                <h3 className="text-lg font-semibold text-heading">
-                  Organization
-                </h3>
-                <p className="text-sm text-muted mt-1">
-                  Connect with talented students for internships
-                </p>
-              </Card>
-            </div>
-
-            <p className="text-center text-sm text-muted">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Login form
   return (
-    <div className="min-h-screen auth-bg flex flex-col">
+    <div className="auth-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-
-      <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-muted hover:text-heading transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Logo width={150} height={50} />
-            </div>
-            <h1 className="text-2xl font-bold text-heading">
-              {isOrganization ? "Organization Login" : "Login"}
-            </h1>
-            <p className="mt-2 text-muted">
-              {isOrganization
-                ? "Sign in to your organization account"
-                : `Sign in as a ${selectedRole}`}
-            </p>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex justify-center mb-4">
+            <Logo className="h-16 sm:h-20" />
           </div>
+          <CardTitle className="text-center">Welcome to SolveX</CardTitle>
+          <CardDescription className="text-center">
+            Sign in to your account to continue
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Select
+              label="Role"
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value as UserRole);
+                if (errors.role) {
+                  setErrors({ ...errors, role: "" });
+                }
+              }}
+              error={errors.role}
+              required
+            >
+              <option value="">Select your role</option>
+              <option value={USER_ROLES.STUDENT}>Student</option>
+              <option value={USER_ROLES.PROFESSOR}>Professor</option>
+            </Select>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            {isOrganization ? (
-              <Input
-                label="Email"
-                type="email"
-                placeholder="organization@example.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-              />
-            ) : (
-              <div className="space-y-4">
-                <Input
-                  label={
-                    selectedRole === USER_ROLES.STUDENT
-                      ? "Student ID"
-                      : "Identifier"
-                  }
-                  type="text"
-                  placeholder={
-                    selectedRole === USER_ROLES.STUDENT
-                      ? "e.g., 2x-xxxxxx"
-                      : "e.g., john.doe"
-                  }
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  required
-                />
-
-                {getDomainsForRole(selectedRole).length > 1 && (
-                  <Select
-                    label="Domain"
-                    value={selectedDomain}
-                    onChange={(e) => setSelectedDomain(e.target.value)}
-                    required
-                  >
-                    {getDomainsForRole(selectedRole).map((domain) => (
-                      <option key={domain} value={domain}>
-                        @{domain}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-
-                {selectedDomain && (
-                  <p className="text-sm text-muted">
-                    Email: {identifier ? buildEmail(identifier, selectedDomain) : `...@${selectedDomain}`}
-                  </p>
+            {role && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-heading">
+                  {getIdentifierLabel()} <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      placeholder={getIdentifierPlaceholder()}
+                      value={identifier}
+                      onChange={(e) => {
+                        setIdentifier(e.target.value);
+                        if (errors.identifier) {
+                          setErrors({ ...errors, identifier: "" });
+                        }
+                      }}
+                      error={errors.identifier}
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center text-muted pt-2">@</div>
+                  <div className="flex-1">
+                    <Select
+                      value={domain}
+                      onChange={(e) => {
+                        setDomain(e.target.value);
+                        if (errors.domain) {
+                          setErrors({ ...errors, domain: "" });
+                        }
+                      }}
+                      disabled={availableDomains.length <= 1}
+                      error={errors.domain}
+                    >
+                      {availableDomains.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+                {identifier && domain && (
+                  <p className="text-xs text-muted mt-1">Email: {getFullEmail()}</p>
                 )}
               </div>
             )}
 
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-muted hover:text-heading transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <Input
+              type="password"
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) {
+                  setErrors({ ...errors, password: "" });
+                }
+              }}
+              error={errors.password}
+              required
+            />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
+            <Button type="submit" className="w-full" disabled={loading || !role}>
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted mt-6">
+          <p className="mt-6 text-center text-sm text-body">
             Don&apos;t have an account?{" "}
-            <Link
-              href={`/signup?role=${selectedRole}`}
-              className="text-primary hover:underline"
-            >
+            <Link href="/signup" className="text-primary font-medium hover:underline">
               Sign up
             </Link>
           </p>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function LoginFallback() {
-  return (
-    <div className="min-h-screen auth-bg flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="mt-2 text-center text-sm text-body">
+            Are you an organization?{" "}
+            <Link href="/login/organization" className="text-primary font-medium hover:underline">
+              Sign in here
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoginFallback />}>
+    <Suspense fallback={<div className="min-h-screen auth-bg flex items-center justify-center">Loading...</div>}>
       <LoginContent />
     </Suspense>
   );

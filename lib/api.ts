@@ -86,19 +86,9 @@ export const authApi = {
 
 export interface Student {
   id: string;
-  student_id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  gpa?: number;
-  major?: string;
-  skills?: string[];
-  bio?: string;
-  avatar_url?: string;
-  cv_url?: string;
-  linkedin_url?: string;
-  github_url?: string;
-  portfolio_url?: string;
-  total_coins: number;
   created_at: string;
   updated_at: string;
 }
@@ -205,24 +195,14 @@ export const organizationApi = {
 
 export interface Opportunity {
   id: string;
-  title: string;
-  description: string;
-  type: "research" | "project" | "internship";
+  name: string;
+  details?: string;
   requirements?: string;
-  skills_needed?: string[];
-  location?: string;
-  is_remote?: boolean;
-  compensation?: string;
-  duration?: string;
-  deadline?: string;
-  max_applicants?: number;
-  status: "open" | "closed" | "archived";
+  reward?: string;
+  type: string;
   professor_id?: string;
-  organization_id?: string;
   professor?: Professor;
-  organization?: Organization;
-  tags?: Tag[];
-  drive_link?: string;
+  requirement_tags?: Tag[];
   created_at: string;
   updated_at: string;
 }
@@ -245,7 +225,7 @@ export const opportunityApi = {
     return fetchApi<Opportunity>(`/opportunities/${id}`);
   },
 
-  create: async (data: Partial<Opportunity>) => {
+  create: async (data: { name: string; details?: string; requirements?: string; reward?: string; type: string; tag_ids?: number[] }) => {
     return fetchApi<Opportunity>("/opportunities", {
       method: "POST",
       body: JSON.stringify(data),
@@ -266,7 +246,7 @@ export const opportunityApi = {
   },
 
   getMyOpportunities: async () => {
-    return fetchApi<Opportunity[]>("/opportunities/mine");
+    return fetchApi<Opportunity[]>("/opportunities/me");
   },
 };
 
@@ -277,8 +257,8 @@ export interface Application {
   student_id: string;
   opportunity_id: string;
   status: "pending" | "accepted" | "rejected";
-  cover_letter?: string;
-  resume_url?: string;
+  message?: string;
+  resume_link?: string;
   student?: Student;
   opportunity?: Opportunity;
   created_at: string;
@@ -286,15 +266,15 @@ export interface Application {
 }
 
 export const applicationApi = {
-  apply: async (opportunityId: string, data: { cover_letter?: string }) => {
-    return fetchApi<Application>(`/opportunities/${opportunityId}/apply`, {
+  apply: async (opportunityId: string, data: { cover_letter?: string; message?: string; resume_link?: string }) => {
+    return fetchApi<Application>(`/applications`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ opportunity_id: opportunityId, ...data }),
     });
   },
 
   getMyApplications: async () => {
-    return fetchApi<Application[]>("/applications/mine");
+    return fetchApi<Application[]>("/applications/me");
   },
 
   getForOpportunity: async (opportunityId: string) => {
@@ -315,17 +295,10 @@ export interface Event {
   id: string;
   title: string;
   description: string;
-  event_type: string;
-  location?: string;
-  is_virtual?: boolean;
-  meeting_url?: string;
-  start_time: string;
-  end_time: string;
-  max_attendees?: number;
-  registration_deadline?: string;
-  professor_id?: string;
+  date?: string;
+  link?: string;
+  sign_up_link?: string;
   organization_id?: string;
-  professor?: Professor;
   organization?: Organization;
   created_at: string;
   updated_at: string;
@@ -333,21 +306,21 @@ export interface Event {
 
 export const eventApi = {
   getAll: async () => {
-    return fetchApi<Event[]>("/events");
+    return fetchApi<Event[]>("/public/events");
   },
 
   getById: async (id: string) => {
-    return fetchApi<Event>(`/events/${id}`);
+    return fetchApi<Event>(`/public/events/${id}`);
   },
 
-  create: async (data: Partial<Event>) => {
+  create: async (data: { title: string; description?: string; date?: string; link?: string; sign_up_link?: string }) => {
     return fetchApi<Event>("/events", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  update: async (id: string, data: Partial<Event>) => {
+  update: async (id: string, data: { title?: string; description?: string; date?: string; link?: string; sign_up_link?: string }) => {
     return fetchApi<Event>(`/events/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -360,14 +333,8 @@ export const eventApi = {
     });
   },
 
-  register: async (eventId: string) => {
-    return fetchApi<{ message: string }>(`/events/${eventId}/register`, {
-      method: "POST",
-    });
-  },
-
   getMyEvents: async () => {
-    return fetchApi<Event[]>("/events/mine");
+    return fetchApi<Event[]>("/events/me");
   },
 };
 

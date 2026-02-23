@@ -9,31 +9,45 @@ import {
   Plus,
   ExternalLink,
   Mail,
+  Phone,
   Globe,
   Edit,
   Trash2,
   Link as LinkIcon,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { organizationApi, eventApi, type Organization, type Event } from "@/lib/api";
+import { eventApi, type Event } from "@/lib/api";
 
 interface EventForm {
   title: string;
   description: string;
-  start_time: string;
-  meeting_url: string;
-  location: string;
+  date: string;
+  link: string;
+  sign_up_link: string;
+}
+
+interface Profile {
+  name?: string;
+  email?: string;
+  contact?: string;
+  link?: string;
 }
 
 export default function OrganizationDashboard() {
   const { data: session } = useSession();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Organization | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   // Modal states
   const [showEventModal, setShowEventModal] = useState(false);
@@ -41,9 +55,9 @@ export default function OrganizationDashboard() {
   const [eventForm, setEventForm] = useState<EventForm>({
     title: "",
     description: "",
-    start_time: "",
-    meeting_url: "",
-    location: "",
+    date: "",
+    link: "",
+    sign_up_link: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,12 +68,18 @@ export default function OrganizationDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [profileRes, eventsRes] = await Promise.all([
-        organizationApi.getProfile().catch(() => null),
+      const [eventsRes] = await Promise.all([
         eventApi.getMyEvents().catch(() => []),
       ]);
 
-      setProfile(profileRes);
+      // Get profile from session
+      if (session?.user) {
+        setProfile({
+          name: session.user.name || undefined,
+          email: session.user.email || undefined,
+        });
+      }
+
       setEvents(Array.isArray(eventsRes) ? eventsRes : []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -74,9 +94,9 @@ export default function OrganizationDashboard() {
     setEventForm({
       title: "",
       description: "",
-      start_time: "",
-      meeting_url: "",
-      location: "",
+      date: "",
+      link: "",
+      sign_up_link: "",
     });
     setShowEventModal(true);
   };
@@ -86,9 +106,9 @@ export default function OrganizationDashboard() {
     setEventForm({
       title: event.title || "",
       description: event.description || "",
-      start_time: event.start_time || "",
-      meeting_url: event.meeting_url || "",
-      location: event.location || "",
+      date: event.date || "",
+      link: event.link || "",
+      sign_up_link: event.sign_up_link || "",
     });
     setShowEventModal(true);
   };
@@ -99,9 +119,9 @@ export default function OrganizationDashboard() {
     setEventForm({
       title: "",
       description: "",
-      start_time: "",
-      meeting_url: "",
-      location: "",
+      date: "",
+      link: "",
+      sign_up_link: "",
     });
   };
 
@@ -133,7 +153,9 @@ export default function OrganizationDashboard() {
       fetchData();
     } catch (error) {
       console.error("Error saving event:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save event");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save event"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +172,9 @@ export default function OrganizationDashboard() {
       fetchData();
     } catch (error) {
       console.error("Error deleting event:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete event");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete event"
+      );
     }
   };
 
@@ -174,7 +198,10 @@ export default function OrganizationDashboard() {
             Manage your events and reach students
           </p>
         </div>
-        <Button onClick={openCreateModal} className="flex items-center gap-2 text-sm sm:text-base self-start sm:self-auto">
+        <Button
+          onClick={openCreateModal}
+          className="flex items-center gap-2 text-sm sm:text-base self-start sm:self-auto"
+        >
           <Plus className="w-4 h-4" />
           Create Event
         </Button>
@@ -192,13 +219,21 @@ export default function OrganizationDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="flex items-center gap-2 text-muted text-sm sm:text-base min-w-0">
               <Mail className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{profile?.email || session?.user?.email}</span>
+              <span className="truncate">
+                {profile?.email || session?.user?.email}
+              </span>
             </div>
-            {profile?.website_url && (
+            {profile?.contact && (
+              <div className="flex items-center gap-2 text-muted text-sm sm:text-base min-w-0">
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{profile.contact}</span>
+              </div>
+            )}
+            {profile?.link && (
               <div className="flex items-center gap-2 text-muted text-sm sm:text-base min-w-0">
                 <Globe className="w-4 h-4 flex-shrink-0" />
                 <a
-                  href={profile.website_url}
+                  href={profile.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline flex items-center gap-1 truncate"
@@ -233,7 +268,9 @@ export default function OrganizationDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Your Events</CardTitle>
-          <CardDescription>Create and manage events for students</CardDescription>
+          <CardDescription>
+            Create and manage events for students
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {events.length === 0 ? (
@@ -245,7 +282,10 @@ export default function OrganizationDashboard() {
               <p className="text-muted mb-6">
                 Create your first event to reach students
               </p>
-              <Button onClick={openCreateModal} className="flex items-center gap-2 mx-auto">
+              <Button
+                onClick={openCreateModal}
+                className="flex items-center gap-2 mx-auto"
+              >
                 <Plus className="w-4 h-4" />
                 Create Your First Event
               </Button>
@@ -263,12 +303,10 @@ export default function OrganizationDashboard() {
                       <h3 className="font-semibold text-base sm:text-lg text-heading">
                         {event.title}
                       </h3>
-                      {event.start_time && (
+                      {event.date && (
                         <p className="text-xs sm:text-sm text-primary mt-1 flex items-center gap-1">
                           <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                          <span className="truncate">
-                            {new Date(event.start_time).toLocaleDateString()}
-                          </span>
+                          <span className="truncate">{event.date}</span>
                         </p>
                       )}
                       {event.description && (
@@ -277,15 +315,26 @@ export default function OrganizationDashboard() {
                         </p>
                       )}
                       <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
-                        {event.meeting_url && (
+                        {event.link && (
                           <a
-                            href={event.meeting_url}
+                            href={event.link}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                           >
                             <LinkIcon className="w-3 h-3" />
-                            Meeting Link
+                            Learn More
+                          </a>
+                        )}
+                        {event.sign_up_link && (
+                          <a
+                            href={event.sign_up_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs sm:text-sm text-green-600 dark:text-green-400 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Sign Up
                           </a>
                         )}
                       </div>
@@ -344,27 +393,27 @@ export default function OrganizationDashboard() {
           />
 
           <Input
-            label="Date & Time"
-            name="start_time"
-            type="datetime-local"
-            value={eventForm.start_time}
+            label="Date / Duration"
+            name="date"
+            value={eventForm.date}
             onChange={handleFormChange}
+            placeholder="e.g., March 15, 2026 or March 15-17, 2026"
           />
 
           <Input
-            label="Location"
-            name="location"
-            value={eventForm.location}
+            label="Learn More Link (optional)"
+            name="link"
+            value={eventForm.link}
             onChange={handleFormChange}
-            placeholder="e.g., Main Campus Auditorium"
+            placeholder="https://your-event-page.com"
           />
 
           <Input
-            label="Meeting URL (optional)"
-            name="meeting_url"
-            value={eventForm.meeting_url}
+            label="Sign Up / Registration Link (optional)"
+            name="sign_up_link"
+            value={eventForm.sign_up_link}
             onChange={handleFormChange}
-            placeholder="https://zoom.us/j/meeting-id"
+            placeholder="https://forms.google.com/your-form"
           />
 
           <div className="flex gap-3 pt-4">
@@ -377,16 +426,11 @@ export default function OrganizationDashboard() {
               Cancel
             </Button>
             <Button type="submit" disabled={submitting} className="flex-1">
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : editingEvent ? (
-                "Update Event"
-              ) : (
-                "Create Event"
-              )}
+              {submitting
+                ? "Saving..."
+                : editingEvent
+                ? "Update Event"
+                : "Create Event"}
             </Button>
           </div>
         </form>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { Calendar, MapPin, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Calendar, Link as LinkIcon, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { eventApi, type Event } from "@/lib/api";
@@ -53,10 +53,7 @@ export default function EventsPage() {
             <Card key={event.id} hover>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <Badge variant="primary">{event.event_type || "Event"}</Badge>
-                  {event.is_virtual && (
-                    <Badge variant="info">Virtual</Badge>
-                  )}
+                  <Badge variant="primary">Event</Badge>
                 </div>
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 text-heading">
                   {event.title}
@@ -66,33 +63,32 @@ export default function EventsPage() {
                 </p>
 
                 <div className="space-y-2 text-sm text-muted">
-                  {event.start_time && (
+                  {event.date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>
-                        {new Date(event.start_time).toLocaleDateString()} at{" "}
-                        {new Date(event.start_time).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <span>{event.date}</span>
                     </div>
                   )}
-                  {event.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{event.location}</span>
-                    </div>
-                  )}
-                  {event.meeting_url && (
+                  {event.link && (
                     <a
-                      href={event.meeting_url}
+                      href={event.link}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-primary hover:underline"
                     >
                       <LinkIcon className="w-4 h-4" />
-                      <span>Join Meeting</span>
+                      <span>Learn More</span>
+                    </a>
+                  )}
+                  {event.sign_up_link && (
+                    <a
+                      href={event.sign_up_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-green-600 dark:text-green-400 hover:underline"
+                    >
+                      <LinkIcon className="w-4 h-4" />
+                      <span>Sign Up</span>
                     </a>
                   )}
                 </div>

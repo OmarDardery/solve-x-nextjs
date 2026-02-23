@@ -17,18 +17,16 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{
+    first_name: string;
+    last_name: string;
     name: string;
-    bio: string;
-    skills: string;
-    major: string;
     department: string;
     website: string;
     description: string;
   }>({
+    first_name: "",
+    last_name: "",
     name: "",
-    bio: "",
-    skills: "",
-    major: "",
     department: "",
     website: "",
     description: "",
@@ -47,10 +45,9 @@ export default function ProfilePage() {
         case USER_ROLES.STUDENT:
           data = await studentApi.getProfile();
           setProfile({
-            name: data.name || "",
-            bio: data.bio || "",
-            skills: data.skills?.join(", ") || "",
-            major: data.major || "",
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            name: "",
             department: "",
             website: "",
             description: "",
@@ -59,10 +56,9 @@ export default function ProfilePage() {
         case USER_ROLES.PROFESSOR:
           data = await professorApi.getProfile();
           setProfile({
+            first_name: "",
+            last_name: "",
             name: data.name || "",
-            bio: data.bio || "",
-            skills: "",
-            major: "",
             department: data.department || "",
             website: "",
             description: "",
@@ -71,10 +67,9 @@ export default function ProfilePage() {
         case USER_ROLES.ORGANIZATION:
           data = await organizationApi.getProfile();
           setProfile({
+            first_name: "",
+            last_name: "",
             name: data.name || "",
-            bio: "",
-            skills: "",
-            major: "",
             department: "",
             website: data.website_url || "",
             description: data.description || "",
@@ -95,16 +90,13 @@ export default function ProfilePage() {
       switch (userRole) {
         case USER_ROLES.STUDENT:
           await studentApi.updateProfile({
-            name: profile.name,
-            bio: profile.bio,
-            skills: profile.skills.split(",").map((s) => s.trim()).filter(Boolean),
-            major: profile.major,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
           });
           break;
         case USER_ROLES.PROFESSOR:
           await professorApi.updateProfile({
             name: profile.name,
-            bio: profile.bio,
             department: profile.department,
           });
           break;
@@ -133,6 +125,10 @@ export default function ProfilePage() {
     );
   }
 
+  const displayName = userRole === USER_ROLES.STUDENT 
+    ? `${profile.first_name} ${profile.last_name}`.trim() || session?.user?.name 
+    : profile.name || session?.user?.name;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
@@ -153,7 +149,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-heading">
-                {session?.user?.name || "User"}
+                {displayName || "User"}
               </h2>
               <div className="flex items-center gap-2 text-sm text-muted">
                 <Mail className="w-4 h-4" />
@@ -166,53 +162,30 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <Input
-              label="Display Name"
-              value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              placeholder="Your name"
-            />
-
             {userRole === USER_ROLES.STUDENT && (
               <>
-                <Textarea
-                  label="Bio"
-                  value={profile.bio}
-                  onChange={(e) =>
-                    setProfile({ ...profile, bio: e.target.value })
-                  }
-                  placeholder="Tell us about yourself..."
-                  rows={4}
+                <Input
+                  label="First Name"
+                  value={profile.first_name}
+                  onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                  placeholder="First name"
                 />
                 <Input
-                  label="Skills (comma-separated)"
-                  value={profile.skills}
-                  onChange={(e) =>
-                    setProfile({ ...profile, skills: e.target.value })
-                  }
-                  placeholder="Python, Machine Learning, Data Analysis"
-                />
-                <Input
-                  label="Major"
-                  value={profile.major}
-                  onChange={(e) =>
-                    setProfile({ ...profile, major: e.target.value })
-                  }
-                  placeholder="Computer Science"
+                  label="Last Name"
+                  value={profile.last_name}
+                  onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                  placeholder="Last name"
                 />
               </>
             )}
 
             {userRole === USER_ROLES.PROFESSOR && (
               <>
-                <Textarea
-                  label="Bio"
-                  value={profile.bio}
-                  onChange={(e) =>
-                    setProfile({ ...profile, bio: e.target.value })
-                  }
-                  placeholder="Your research interests and background..."
-                  rows={4}
+                <Input
+                  label="Name"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  placeholder="Your name"
                 />
                 <Input
                   label="Department"
@@ -227,6 +200,12 @@ export default function ProfilePage() {
 
             {userRole === USER_ROLES.ORGANIZATION && (
               <>
+                <Input
+                  label="Organization Name"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  placeholder="Your organization name"
+                />
                 <Textarea
                   label="Description"
                   value={profile.description}
