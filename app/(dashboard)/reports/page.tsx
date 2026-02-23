@@ -3,85 +3,112 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { FileText, Plus, Calendar, Loader2 } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  Calendar,
+  Loader2,
+  ExternalLink,
+  User,
+  Trash2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Textarea, Input, Select } from "@/components/ui/Input";
+import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { reportApi, type WeeklyReport } from "@/lib/api";
+import { reportApi, professorApi, type WeeklyReport, type Professor } from "@/lib/api";
 import { USER_ROLES } from "@/lib/types";
 
 export default function ReportsPage() {
   const { data: session } = useSession();
   const [reports, setReports] = useState<WeeklyReport[]>([]);
+  const [professors, setProfessors] = useState<Professor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    week_number: getCurrentWeekNumber(),
-    hours_worked: 0,
-    tasks_completed: "",
-    challenges: "",
-    next_week_goals: "",
+    recipient_id: "",
+    drive_link: "",
   });
+  const [errors, setErrors] = useState<{ drive_link?: string; recipient_id?: string }>({});
 
   const isStudent = session?.user?.role === USER_ROLES.STUDENT;
-
-  function getCurrentWeekNumber() {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-    return Math.ceil((days + 1) / 7);
-  }
+  const isProfessor = session?.user?.role === USER_ROLES.PROFESSOR;
 
   useEffect(() => {
-    fetchReports();
+    fetchData();
   }, []);
 
-  const fetchReports = async () => {
+  const fetchData = async () => {
     try {
-      const data = await reportApi.getMyReports();
-      setReports(data || []);
+      const [reportsData, professorsData] = await Promise.all([
+        reportApi.getMyReports().catch(() => []),
+        isStudent ? professorApi.getAll().catch(() => []) : Promise.resolve([]),
+      ]);
+      setReports(reportsData || []);
+      setProfessors(professorsData || []);
     } catch (error) {
-      console.error("Error fetching reports:", error);
+      console.error("Error fetching data:", error);
       toast.error("Failed to fetch reports");
     } finally {
       setLoading(false);
     }
   };
 
+  const validateDriveLink = (link: string): boolean => {
+    if (!link) return false;
+    const drivePatterns = [
+      /^https:\/\/drive\.google\.com\//,
+      /^https:\/\/docs\.google\.com\//,
+    ];
+    return drivePatterns.some((pattern) => pattern.test(link));
+  };
+
   const handleSubmit = async () => {
-    if (!formData.tasks_completed) {
-      toast.error("Please fill in completed tasks");
+    const newErrors: typeof errors = {};
+
+    if (!formData.recipient_id) {
+      newErrors.recipient_id = "Please select a professor";
+    }
+
+    if (!formData.drive_link) {
+      newErrors.drive_link = "Please enter a Google Drive link";
+    } else if (!validateDriveLink(formData.drive_link)) {
+      newErrors.drive_link = "Please enter a valid Google Drive link";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     setSubmitting(true);
     try {
       await reportApi.create({
-        week_number: formData.week_number,
-        year: new Date().getFullYear(),
-        hours_worked: formData.hours_worked,
-        tasks_completed: formData.tasks_completed,
-        challenges: formData.challenges,
-        next_week_goals: formData.next_week_goals,
-        status: "submitted",
+        recipient_id: formData.recipient_id,
+        drive_link: formData.drive_link,
       });
       toast.success("Report submitted successfully!");
       setShowCreateModal(false);
-      setFormData({
-        week_number: getCurrentWeekNumber(),
-        hours_worked: 0,
-        tasks_completed: "",
-        challenges: "",
-        next_week_goals: "",
-      });
-      fetchReports();
+      setFormData({ recipient_id: "", drive_link: "" });
+      setErrors({});
+      fetchData();
     } catch (error) {
       toast.error("Failed to submit report");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this report?")) return;
+
+    try {
+      await reportApi.delete(id);
+      toast.success("Report deleted");
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to delete report");
     }
   };
 
@@ -94,8 +121,8 @@ export default function ReportsPage() {
           </h1>
           <p className="text-muted mt-1 text-sm sm:text-base">
             {isStudent
-              ? "Track your progress with weekly reports"
-              : "View student weekly reports"}
+              ? "Submit weekly progress reports to your professors"
+              : "View submitted reports from students"}
           </p>
         </div>
         {isStudent && (
@@ -127,68 +154,61 @@ export default function ReportsPage() {
           {reports.map((report) => (
             <Card key={report.id}>
               <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-heading">
-                      Week {report.week_number}, {report.year}
-                    </h3>
-                    <div className="flex items-center gap-4 text-sm text-muted mt-1">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-4 h-4 text-muted" />
+                      <span className="text-sm text-muted">
+                        Submitted on{" "}
                         {report.created_at
                           ? new Date(report.created_at).toLocaleDateString()
                           : "N/A"}
-                      </div>
-                      <Badge
-                        variant={
-                          report.status === "approved"
-                            ? "success"
-                            : report.status === "rejected"
-                            ? "error"
-                            : "default"
-                        }
-                      >
-                        {report.status}
-                      </Badge>
+                      </span>
                     </div>
+
+                    {isProfessor && report.student && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <User className="w-4 h-4 text-muted" />
+                        <span className="text-heading font-medium">
+                          {report.student.first_name} {report.student.last_name}
+                        </span>
+                      </div>
+                    )}
+
+                    {isStudent && report.recipient && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <User className="w-4 h-4 text-muted" />
+                        <span className="text-muted">
+                          Sent to:{" "}
+                          <span className="text-heading">
+                            {report.recipient.first_name} {report.recipient.last_name}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
+                    <a
+                      href={report.drive_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View Report on Google Drive
+                    </a>
                   </div>
-                  {report.hours_worked > 0 && (
-                    <Badge variant="primary">{report.hours_worked} hours</Badge>
+
+                  {isStudent && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(report.id)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   )}
                 </div>
-                
-                {report.tasks_completed && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-heading mb-1">Tasks Completed</h4>
-                    <p className="text-muted text-sm whitespace-pre-wrap">{report.tasks_completed}</p>
-                  </div>
-                )}
-                
-                {report.challenges && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-heading mb-1">Challenges</h4>
-                    <p className="text-muted text-sm whitespace-pre-wrap">{report.challenges}</p>
-                  </div>
-                )}
-                
-                {report.next_week_goals && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-medium text-heading mb-1">Next Week Goals</h4>
-                    <p className="text-muted text-sm whitespace-pre-wrap">{report.next_week_goals}</p>
-                  </div>
-                )}
-                
-                {report.supervisor_feedback && (
-                  <div
-                    className="mt-4 p-3 rounded-lg"
-                    style={{ backgroundColor: "rgba(100, 58, 230, 0.1)" }}
-                  >
-                    <p className="text-sm font-medium text-heading mb-1">
-                      Supervisor Feedback
-                    </p>
-                    <p className="text-sm text-muted">{report.supervisor_feedback}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
@@ -202,52 +222,40 @@ export default function ReportsPage() {
         title="Submit Weekly Report"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Week Number"
-              type="number"
-              value={formData.week_number}
-              onChange={(e) =>
-                setFormData({ ...formData, week_number: parseInt(e.target.value) || 1 })
-              }
-            />
-            <Input
-              label="Hours Worked"
-              type="number"
-              value={formData.hours_worked}
-              onChange={(e) =>
-                setFormData({ ...formData, hours_worked: parseInt(e.target.value) || 0 })
-              }
-            />
-          </div>
-          <Textarea
-            label="Tasks Completed"
-            placeholder="What did you accomplish this week?"
-            value={formData.tasks_completed}
-            onChange={(e) =>
-              setFormData({ ...formData, tasks_completed: e.target.value })
-            }
-            rows={4}
+          <Select
+            label="Select Professor"
+            value={formData.recipient_id}
+            onChange={(e) => {
+              setFormData({ ...formData, recipient_id: e.target.value });
+              setErrors({ ...errors, recipient_id: undefined });
+            }}
+            error={errors.recipient_id}
+          >
+            <option value="">Choose a professor...</option>
+            {professors.map((prof) => (
+              <option key={prof.id} value={prof.id}>
+                {prof.first_name} {prof.last_name}
+              </option>
+            ))}
+          </Select>
+
+          <Input
+            label="Google Drive Link"
+            placeholder="https://drive.google.com/..."
+            value={formData.drive_link}
+            onChange={(e) => {
+              setFormData({ ...formData, drive_link: e.target.value });
+              setErrors({ ...errors, drive_link: undefined });
+            }}
+            error={errors.drive_link}
           />
-          <Textarea
-            label="Challenges (optional)"
-            placeholder="Any challenges or blockers you faced?"
-            value={formData.challenges}
-            onChange={(e) =>
-              setFormData({ ...formData, challenges: e.target.value })
-            }
-            rows={3}
-          />
-          <Textarea
-            label="Next Week Goals (optional)"
-            placeholder="What do you plan to work on next week?"
-            value={formData.next_week_goals}
-            onChange={(e) =>
-              setFormData({ ...formData, next_week_goals: e.target.value })
-            }
-            rows={3}
-          />
-          <div className="flex gap-3 justify-end">
+
+          <p className="text-xs text-muted">
+            Upload your weekly report to Google Drive and share the link here.
+            Make sure the link is accessible to your professor.
+          </p>
+
+          <div className="flex gap-3 justify-end pt-2">
             <Button
               variant="secondary"
               onClick={() => setShowCreateModal(false)}

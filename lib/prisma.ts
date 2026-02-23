@@ -2,6 +2,12 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
+// Enable BigInt serialization for JSON responses
+// @ts-expect-error - extending BigInt prototype for JSON serialization
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

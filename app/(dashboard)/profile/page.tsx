@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { User, Mail, Save, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { studentApi, professorApi, organizationApi } from "@/lib/api";
 import { USER_ROLES } from "@/lib/types";
@@ -20,16 +20,14 @@ export default function ProfilePage() {
     first_name: string;
     last_name: string;
     name: string;
-    department: string;
-    website: string;
-    description: string;
+    contact: string;
+    link: string;
   }>({
     first_name: "",
     last_name: "",
     name: "",
-    department: "",
-    website: "",
-    description: "",
+    contact: "",
+    link: "",
   });
 
   useEffect(() => {
@@ -48,20 +46,18 @@ export default function ProfilePage() {
             first_name: data.first_name || "",
             last_name: data.last_name || "",
             name: "",
-            department: "",
-            website: "",
-            description: "",
+            contact: "",
+            link: "",
           });
           break;
         case USER_ROLES.PROFESSOR:
           data = await professorApi.getProfile();
           setProfile({
-            first_name: "",
-            last_name: "",
-            name: data.name || "",
-            department: data.department || "",
-            website: "",
-            description: "",
+            first_name: data.first_name || "",
+            last_name: data.last_name || "",
+            name: "",
+            contact: "",
+            link: "",
           });
           break;
         case USER_ROLES.ORGANIZATION:
@@ -70,9 +66,8 @@ export default function ProfilePage() {
             first_name: "",
             last_name: "",
             name: data.name || "",
-            department: "",
-            website: data.website_url || "",
-            description: data.description || "",
+            contact: data.contact || "",
+            link: data.link || "",
           });
           break;
       }
@@ -96,15 +91,15 @@ export default function ProfilePage() {
           break;
         case USER_ROLES.PROFESSOR:
           await professorApi.updateProfile({
-            name: profile.name,
-            department: profile.department,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
           });
           break;
         case USER_ROLES.ORGANIZATION:
           await organizationApi.updateProfile({
             name: profile.name,
-            website_url: profile.website,
-            description: profile.description,
+            contact: profile.contact,
+            link: profile.link,
           });
           break;
       }
@@ -125,9 +120,9 @@ export default function ProfilePage() {
     );
   }
 
-  const displayName = userRole === USER_ROLES.STUDENT 
-    ? `${profile.first_name} ${profile.last_name}`.trim() || session?.user?.name 
-    : profile.name || session?.user?.name;
+  const displayName = userRole === USER_ROLES.ORGANIZATION 
+    ? profile.name || session?.user?.name 
+    : `${profile.first_name} ${profile.last_name}`.trim() || session?.user?.name;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -162,7 +157,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-4">
-            {userRole === USER_ROLES.STUDENT && (
+            {(userRole === USER_ROLES.STUDENT || userRole === USER_ROLES.PROFESSOR) && (
               <>
                 <Input
                   label="First Name"
@@ -179,25 +174,6 @@ export default function ProfilePage() {
               </>
             )}
 
-            {userRole === USER_ROLES.PROFESSOR && (
-              <>
-                <Input
-                  label="Name"
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  placeholder="Your name"
-                />
-                <Input
-                  label="Department"
-                  value={profile.department}
-                  onChange={(e) =>
-                    setProfile({ ...profile, department: e.target.value })
-                  }
-                  placeholder="Computer Science"
-                />
-              </>
-            )}
-
             {userRole === USER_ROLES.ORGANIZATION && (
               <>
                 <Input
@@ -206,20 +182,19 @@ export default function ProfilePage() {
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                   placeholder="Your organization name"
                 />
-                <Textarea
-                  label="Description"
-                  value={profile.description}
+                <Input
+                  label="Contact"
+                  value={profile.contact}
                   onChange={(e) =>
-                    setProfile({ ...profile, description: e.target.value })
+                    setProfile({ ...profile, contact: e.target.value })
                   }
-                  placeholder="About your organization..."
-                  rows={4}
+                  placeholder="Contact information"
                 />
                 <Input
-                  label="Website"
-                  value={profile.website}
+                  label="Link"
+                  value={profile.link}
                   onChange={(e) =>
-                    setProfile({ ...profile, website: e.target.value })
+                    setProfile({ ...profile, link: e.target.value })
                   }
                   placeholder="https://example.com"
                 />

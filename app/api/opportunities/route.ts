@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createOpportunity, OpportunityType } from "@/lib/services/opportunity";
+import { createOpportunity, getAllOpportunities, OpportunityType } from "@/lib/services/opportunity";
+
+// GET /api/opportunities - Get all opportunities
+export async function GET() {
+  try {
+    const opportunities = await getAllOpportunities();
+    return NextResponse.json(opportunities);
+  } catch (error) {
+    console.error("Get opportunities error:", error);
+    return NextResponse.json(
+      { error: "Failed to get opportunities" },
+      { status: 500 }
+    );
+  }
+}
 
 // POST /api/opportunities - Create new opportunity (professor only)
 export async function POST(request: Request) {

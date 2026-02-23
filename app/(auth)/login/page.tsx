@@ -137,7 +137,7 @@ function LoginContent() {
                 <label className="block text-sm font-medium text-heading">
                   {getIdentifierLabel()} <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2 items-start">
+                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start">
                   <div className="flex-1">
                     <Input
                       type="text"
@@ -153,7 +153,7 @@ function LoginContent() {
                       required
                     />
                   </div>
-                  <div className="flex items-center text-muted pt-2">@</div>
+                  <div className="hidden sm:flex items-center text-muted pt-2">@</div>
                   <div className="flex-1">
                     <Select
                       value={domain}
@@ -167,7 +167,7 @@ function LoginContent() {
                       error={errors.domain}
                     >
                       {availableDomains.map((d) => (
-                        <option key={d} value={d}>{d}</option>
+                        <option key={d} value={d}>@{d}</option>
                       ))}
                     </Select>
                   </div>

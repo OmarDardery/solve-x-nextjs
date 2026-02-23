@@ -71,6 +71,26 @@ export function getOrganizationJWT(organization: {
 }
 
 /**
+ * Get all organizations
+ */
+export async function getAllOrganizations() {
+  const organizations = await prisma.organization.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      contact: true,
+      link: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return organizations;
+}
+
+/**
  * Get organization by ID
  */
 export async function getOrganizationById(id: bigint) {

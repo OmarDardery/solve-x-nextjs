@@ -14,7 +14,6 @@ import {
   LogOut,
   Menu,
   X,
-  Coins,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -120,17 +119,6 @@ export function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Coins (for students) */}
-            {userRole === USER_ROLES.STUDENT && (
-              <Link
-                href="/coins"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-              >
-                <Coins className="w-4 h-4" />
-                <span className="text-sm font-medium">0</span>
-              </Link>
-            )}
-
             {/* Notifications */}
             <Link
               href="/notifications"

@@ -95,22 +95,22 @@ export interface Student {
 
 export const studentApi = {
   getProfile: async () => {
-    return fetchApi<Student>("/students/profile");
+    return fetchApi<Student>("/profile");
   },
 
   updateProfile: async (data: Partial<Student>) => {
-    return fetchApi<Student>("/students/profile", {
+    return fetchApi<Student>("/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   getById: async (id: string) => {
-    return fetchApi<Student>(`/students/${id}`);
+    return fetchApi<Student>(`/public/students/${id}`);
   },
 
   getAll: async () => {
-    return fetchApi<Student[]>("/students");
+    return fetchApi<Student[]>("/public/students");
   },
 };
 
@@ -118,37 +118,31 @@ export const studentApi = {
 
 export interface Professor {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  department?: string;
-  title?: string;
-  bio?: string;
-  avatar_url?: string;
-  research_areas?: string[];
-  office_location?: string;
-  office_hours?: string;
   created_at: string;
   updated_at: string;
 }
 
 export const professorApi = {
   getProfile: async () => {
-    return fetchApi<Professor>("/professors/profile");
+    return fetchApi<Professor>("/profile");
   },
 
   updateProfile: async (data: Partial<Professor>) => {
-    return fetchApi<Professor>("/professors/profile", {
+    return fetchApi<Professor>("/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   getById: async (id: string) => {
-    return fetchApi<Professor>(`/professors/${id}`);
+    return fetchApi<Professor>(`/public/professors/${id}`);
   },
 
   getAll: async () => {
-    return fetchApi<Professor[]>("/professors");
+    return fetchApi<Professor[]>("/public/professors");
   },
 };
 
@@ -158,36 +152,30 @@ export interface Organization {
   id: string;
   name: string;
   email: string;
-  description?: string;
-  logo_url?: string;
-  website_url?: string;
-  industry?: string;
-  location?: string;
-  size?: string;
-  founded_year?: number;
-  verified: boolean;
+  contact?: string;
+  link?: string;
   created_at: string;
   updated_at: string;
 }
 
 export const organizationApi = {
   getProfile: async () => {
-    return fetchApi<Organization>("/organizations/profile");
+    return fetchApi<Organization>("/profile");
   },
 
   updateProfile: async (data: Partial<Organization>) => {
-    return fetchApi<Organization>("/organizations/profile", {
+    return fetchApi<Organization>("/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   getById: async (id: string) => {
-    return fetchApi<Organization>(`/organizations/${id}`);
+    return fetchApi<Organization>(`/public/organizations/${id}`);
   },
 
   getAll: async () => {
-    return fetchApi<Organization[]>("/organizations");
+    return fetchApi<Organization[]>("/public/organizations");
   },
 };
 
@@ -381,87 +369,56 @@ export const notificationApi = {
 export interface WeeklyReport {
   id: string;
   student_id: string;
-  opportunity_id: string;
-  week_number: number;
-  year: number;
-  hours_worked: number;
-  tasks_completed?: string;
-  challenges?: string;
-  next_week_goals?: string;
-  supervisor_feedback?: string;
-  status: "draft" | "submitted" | "approved" | "rejected";
+  recipient_id: string;
+  drive_link: string;
   student?: Student;
-  opportunity?: Opportunity;
+  recipient?: Professor;
   created_at: string;
   updated_at: string;
 }
 
 export const reportApi = {
   getMyReports: async () => {
-    return fetchApi<WeeklyReport[]>("/reports/mine");
+    return fetchApi<WeeklyReport[]>("/reports/me");
   },
 
-  getForOpportunity: async (opportunityId: string) => {
-    return fetchApi<WeeklyReport[]>(`/opportunities/${opportunityId}/reports`);
+  getReportsForStudent: async (studentId: string) => {
+    return fetchApi<WeeklyReport[]>(`/reports/student/${studentId}`);
   },
 
-  create: async (data: Partial<WeeklyReport>) => {
+  create: async (data: { recipient_id: string; drive_link: string }) => {
     return fetchApi<WeeklyReport>("/reports", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  update: async (id: string, data: Partial<WeeklyReport>) => {
-    return fetchApi<WeeklyReport>(`/reports/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-  },
-
-  submit: async (id: string) => {
-    return fetchApi<WeeklyReport>(`/reports/${id}/submit`, {
-      method: "PUT",
-    });
-  },
-
-  review: async (
-    id: string,
-    data: { status: "approved" | "rejected"; feedback?: string }
-  ) => {
-    return fetchApi<WeeklyReport>(`/reports/${id}/review`, {
-      method: "PUT",
-      body: JSON.stringify(data),
+  delete: async (id: string) => {
+    return fetchApi<void>(`/reports/${id}`, {
+      method: "DELETE",
     });
   },
 };
 
 // ==================== COINS ====================
 
-export interface CoinTransaction {
+export interface Coins {
   id: string;
   student_id: string;
   amount: number;
-  type: "earn" | "spend";
-  description: string;
-  reference_type?: string;
-  reference_id?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export const coinApi = {
-  getBalance: async () => {
-    return fetchApi<{ balance: number }>("/coins/balance");
+  getMyCoins: async () => {
+    return fetchApi<Coins>("/coins/me");
   },
 
-  getTransactions: async () => {
-    return fetchApi<CoinTransaction[]>("/coins/transactions");
-  },
-
-  award: async (studentId: string, amount: number, description: string) => {
-    return fetchApi<CoinTransaction>("/coins/award", {
+  increment: async (amount: number) => {
+    return fetchApi<Coins>("/coins/increment", {
       method: "POST",
-      body: JSON.stringify({ student_id: studentId, amount, description }),
+      body: JSON.stringify({ amount }),
     });
   },
 };
@@ -471,16 +428,16 @@ export const coinApi = {
 export interface Tag {
   id: string;
   name: string;
-  category?: string;
+  description?: string;
   created_at: string;
 }
 
 export const tagApi = {
   getAll: async () => {
-    return fetchApi<Tag[]>("/tags");
+    return fetchApi<Tag[]>("/public/tags");
   },
 
-  create: async (data: { name: string; category?: string }) => {
+  create: async (data: { name: string; description?: string }) => {
     return fetchApi<Tag>("/tags", {
       method: "POST",
       body: JSON.stringify(data),

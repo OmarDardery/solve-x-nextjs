@@ -100,7 +100,7 @@ export default function OpportunityForm({
     try {
       const newTag = await tagApi.create({
         name: newTagName.trim(),
-        category: newTagDescription.trim() || undefined,
+        description: newTagDescription.trim() || undefined,
       });
       toast.success("Tag created successfully!");
       setShowAddTagModal(false);
@@ -300,8 +300,8 @@ export default function OpportunityForm({
                       <div className="font-medium text-sm text-heading">
                         {tag.name}
                       </div>
-                      {tag.category && (
-                        <div className="text-xs text-muted">{tag.category}</div>
+                      {tag.description && (
+                        <div className="text-xs text-muted">{tag.description}</div>
                       )}
                     </button>
                   ))}

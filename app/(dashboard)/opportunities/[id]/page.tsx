@@ -135,7 +135,7 @@ export default function OpportunityDetailPage({
             {opportunity.professor && (
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                <span>{opportunity.professor.name}</span>
+                <span>{opportunity.professor.first_name} {opportunity.professor.last_name}</span>
               </div>
             )}
             {opportunity.created_at && (
