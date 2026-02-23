@@ -18,7 +18,7 @@ export async function GET() {
     });
 
     // Transform to snake_case for frontend
-    const transformed = students.map((s) => ({
+    const transformed = students.map((s: typeof students[number]) => ({
       id: s.id.toString(),
       first_name: s.firstName,
       last_name: s.lastName,
