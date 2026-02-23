@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { getApplicationsByOpportunityId } from "@/lib/services/application";
 import { getOpportunityById } from "@/lib/services/opportunity";
 
+type ApplicationWithRelations = Awaited<ReturnType<typeof getApplicationsByOpportunityId>>[number];
+
 // GET /api/opportunities/[id]/applications - Get applications for an opportunity
 export async function GET(
   request: Request,
@@ -32,7 +34,7 @@ export async function GET(
     const applications = await getApplicationsByOpportunityId(BigInt(id));
 
     // Transform for API response
-    const transformed = applications.map((app) => ({
+    const transformed = applications.map((app: ApplicationWithRelations) => ({
       id: app.id.toString(),
       student_id: app.studentId.toString(),
       opportunity_id: app.opportunityId.toString(),
