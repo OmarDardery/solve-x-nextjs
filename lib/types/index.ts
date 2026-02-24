@@ -52,7 +52,7 @@ export const getDomainsForRole = (role: UserRole): string[] => {
  */
 export const buildEmail = (identifier: string, domain: string): string => {
   if (!identifier || !domain) return "";
-  return `${identifier}@${domain}`;
+  return `${identifier}` + (process.env.NEXT_PUBLIC_TEST ? "" : `@${domain}`);
 };
 
 /**

@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     // Validate email domain based on role
     switch (role) {
       case "student":
-        if (!isValidStudentDomain(email)) {
+        if (!isValidStudentDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
           return NextResponse.json(
             { error: "Invalid email domain for student. Use a valid student email." },
             { status: 400 }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         break;
 
       case "professor":
-        if (!isValidProfessorDomain(email)) {
+        if (!isValidProfessorDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
           return NextResponse.json(
             { error: "Invalid email domain for professor. Use a valid faculty email." },
             { status: 400 }

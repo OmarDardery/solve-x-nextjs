@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: Props) {
 
     switch (role) {
       case "student": {
-        if (!isValidStudentDomain(email)) {
+        if (!isValidStudentDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
           return NextResponse.json(
             { error: "Invalid email domain for student" },
             { status: 400 }
@@ -44,7 +44,7 @@ export async function POST(request: Request, { params }: Props) {
       }
 
       case "professor": {
-        if (!isValidProfessorDomain(email)) {
+        if (!isValidProfessorDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
           return NextResponse.json(
             { error: "Invalid email domain for professor" },
             { status: 400 }
