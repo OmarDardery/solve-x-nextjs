@@ -14,7 +14,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Textarea } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { opportunityApi, applicationApi, type Opportunity } from "@/lib/api";
 import { USER_ROLES } from "@/lib/types";
@@ -32,6 +32,7 @@ export default function OpportunityDetailPage({
   const [applying, setApplying] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
+  const [resumeLink, setResumeLink] = useState("");
 
   const isStudent = session?.user?.role === USER_ROLES.STUDENT;
 
@@ -57,10 +58,16 @@ export default function OpportunityDetailPage({
       return;
     }
 
+    if (!resumeLink.trim()) {
+      toast.error("Please provide a resume link");
+      return;
+    }
+
     setApplying(true);
     try {
       await applicationApi.apply(id, {
         message: coverLetter,
+        resume_link: resumeLink,
       });
       toast.success("Application submitted successfully!");
       setShowApplyModal(false);
@@ -212,6 +219,16 @@ export default function OpportunityDetailPage({
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               rows={6}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-heading mb-2">
+              Resume Link (make sure it's accessible by the professor)
+            </label>
+            <Input
+              placeholder="Paste the link to your resume here..."
+              value={resumeLink}
+              onChange={(e) => setResumeLink(e.target.value)}
             />
           </div>
           <div className="flex gap-3 justify-end">

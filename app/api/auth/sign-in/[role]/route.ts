@@ -44,6 +44,7 @@ export async function POST(request: Request, { params }: Props) {
       }
 
       case "professor": {
+        process.env.NEXT_PUBLIC_TEST && console.log("Testing mode: Skipping professor email domain validation");
         if (!isValidProfessorDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
           return NextResponse.json(
             { error: "Invalid email domain for professor" },

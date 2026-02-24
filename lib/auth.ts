@@ -40,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           switch (role) {
             case "student": {
-              if (!isValidStudentDomain(email)) {
+              if (!isValidStudentDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
                 throw new Error("Invalid email domain for student");
               }
               const student = await authenticateStudent(email, password);
@@ -53,7 +53,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               };
             }
             case "professor": {
-              if (!isValidProfessorDomain(email)) {
+              process.env.NEXT_PUBLIC_TEST && console.log("Testing mode: Skipping professor email domain validation");
+              if (!isValidProfessorDomain(email) && !process.env.NEXT_PUBLIC_TEST) {
                 throw new Error("Invalid email domain for professor");
               }
               const professor = await authenticateProfessor(email, password);

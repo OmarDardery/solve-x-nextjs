@@ -140,7 +140,6 @@ function SignupContent() {
     setLoading(true);
     try {
       const email = getFullEmail();
-      console.log("Sending verification code to:", email);
       const response = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
