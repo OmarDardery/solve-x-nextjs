@@ -135,25 +135,6 @@ export default function HomePage() {
                 );
               })}
             </div>
-
-            {/* CTA Section */}
-            <div className="text-center py-12 px-4">
-              <div className="card max-w-2xl mx-auto p-8 sm:p-12">
-                <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-4">
-                  Ready to Start Your Journey?
-                </h2>
-                <p className="text-muted mb-6">
-                  Join thousands of students, professors, and organizations already
-                  using SolveX to connect and grow.
-                </p>
-                {!session && (
-                  <Button as={Link} href="/signup" size="lg">
-                    Create Your Account
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </main>
