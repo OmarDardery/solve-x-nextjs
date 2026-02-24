@@ -64,6 +64,9 @@ export async function getAllEvents() {
 export async function getEventsByOrganizationId(organizationId: bigint) {
   return prisma.event.findMany({
     where: { organizationId },
+    include: {
+      organization: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 }
