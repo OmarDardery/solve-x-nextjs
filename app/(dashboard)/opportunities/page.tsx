@@ -2,24 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { Search, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
-import { opportunityApi, type Opportunity } from "@/lib/api";
+import { opportunityApi, applicationApi, type Opportunity } from "@/lib/api";
+import { USER_ROLES } from "@/lib/types";
 
 export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
+  const isStudent = session?.user?.role === USER_ROLES.STUDENT;
+  const [appliedIds, setAppliedIds] = useState<Record<string, true>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
     fetchOpportunities();
   }, []);
+
+  useEffect(() => {
+    if (isStudent) fetchMyApplications();
+  }, [isStudent]);
 
   useEffect(() => {
     filterOpportunities();
@@ -64,6 +73,20 @@ export default function OpportunitiesPage() {
       internship: "Internship",
     };
     return labels[type] || type;
+  };
+
+  const fetchMyApplications = async () => {
+    try {
+      const apps = await applicationApi.getMyApplications();
+      const map: Record<string, true> = {};
+      (apps || []).forEach((a: any) => {
+        const oppId = a.opportunity?.id || a.opportunity_id;
+        if (oppId) map[oppId] = true;
+      });
+      setAppliedIds(map);
+    } catch (err) {
+      console.error("Failed to fetch my applications:", err);
+    }
   };
 
   return (
@@ -125,6 +148,11 @@ export default function OpportunitiesPage() {
                   <Badge variant="primary" className="text-xs">
                     {getTypeLabel(opportunity.type)}
                   </Badge>
+                  {isStudent && appliedIds[opportunity.id] && (
+                    <Badge variant="success" className="text-xs">
+                      Applied
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="text-lg sm:text-xl font-semibold mb-2 line-clamp-2 text-heading">
                   {opportunity.name}

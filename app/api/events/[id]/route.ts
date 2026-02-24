@@ -50,9 +50,31 @@ export async function PUT(request: Request, { params }: Props) {
     }
 
     const body = await request.json();
+    console.log("Update event body:", body);
     const updated = await updateEvent(eventId, body);
 
-    return NextResponse.json(updated);
+    const transformed = {
+      id: updated.id.toString(),
+      title: updated.title,
+      description: updated.description,
+      date: updated.date,
+      link: updated.link || null,
+      sign_up_link: updated.signUpLink || null,
+      organization_id: updated.organizationId?.toString(),
+      organization: updated.organization
+        ? {
+            id: updated.organization.id.toString(),
+            name: updated.organization.name,
+            email: updated.organization.email,
+            contact: updated.organization.contact,
+            link: updated.organization.link,
+          }
+        : undefined,
+      created_at: updated.createdAt?.toISOString() || new Date().toISOString(),
+      updated_at: updated.updatedAt?.toISOString() || new Date().toISOString(),
+    };
+
+    return NextResponse.json(transformed);
   } catch (error) {
     console.error("Update event error:", error);
     return NextResponse.json(

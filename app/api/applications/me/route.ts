@@ -19,10 +19,79 @@ export async function GET() {
 
     if (session.user.role === "student") {
       const applications = await getApplicationsByStudentId(userId);
-      return NextResponse.json(applications);
+      const transformed = applications.map((app) => ({
+        id: app.id.toString(),
+        student_id: app.studentId.toString(),
+        opportunity_id: app.opportunityId.toString(),
+        status: app.status,
+        message: app.message,
+        resume_link: app.resumeLink,
+        student: app.student
+          ? {
+              id: app.student.id.toString(),
+              first_name: app.student.firstName,
+              last_name: app.student.lastName,
+              email: app.student.email,
+            }
+          : undefined,
+        opportunity: app.opportunity
+          ? {
+              id: app.opportunity.id.toString(),
+              name: app.opportunity.name,
+              created_at: app.opportunity.createdAt?.toISOString() || null,
+              professor: app.opportunity.professor
+                ? {
+                    id: app.opportunity.professor.id.toString(),
+                    first_name: app.opportunity.professor.firstName,
+                    last_name: app.opportunity.professor.lastName,
+                    email: app.opportunity.professor.email,
+                  }
+                : undefined,
+            }
+          : undefined,
+        created_at: app.createdAt?.toISOString() || new Date().toISOString(),
+        updated_at: app.updatedAt?.toISOString() || new Date().toISOString(),
+      }));
+
+      return NextResponse.json(transformed);
     } else if (session.user.role === "professor") {
       const applications = await getApplicationsByProfessorOpportunities(userId);
-      return NextResponse.json(applications);
+
+      const transformed = applications.map((app) => ({
+        id: app.id.toString(),
+        student_id: app.studentId.toString(),
+        opportunity_id: app.opportunityId.toString(),
+        status: app.status,
+        message: app.message,
+        resume_link: app.resumeLink,
+        student: app.student
+          ? {
+              id: app.student.id.toString(),
+              first_name: app.student.firstName,
+              last_name: app.student.lastName,
+              email: app.student.email,
+            }
+          : undefined,
+        opportunity: app.opportunity
+          ? {
+              id: app.opportunity.id.toString(),
+              name: app.opportunity.name,
+              created_at: app.opportunity.createdAt?.toISOString() || null,
+              professor: app.opportunity.professor
+                ? {
+                    id: app.opportunity.professor.id.toString(),
+                    first_name: app.opportunity.professor.firstName,
+                    last_name: app.opportunity.professor.lastName,
+                    email: app.opportunity.professor.email,
+                  }
+                : undefined,
+            }
+          : undefined,
+        created_at: app.createdAt?.toISOString() || new Date().toISOString(),
+        updated_at: app.updatedAt?.toISOString() || new Date().toISOString(),
+      }));
+
+      return NextResponse.json(transformed);
     } else {
       return NextResponse.json(
         { error: "Only students and professors can access applications" },

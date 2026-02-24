@@ -41,8 +41,13 @@ export async function POST(request: Request) {
       resume_link
     );
 
+    const transformedApplication = {
+      ...application,
+      resume_link: application.resumeLink, // Map camelCase to snake_case
+    };
+
     return NextResponse.json(
-      { message: "Application submitted successfully", application },
+      { message: "Application submitted successfully", application: transformedApplication },
       { status: 201 }
     );
   } catch (error) {

@@ -188,6 +188,8 @@ export interface Opportunity {
   requirements?: string;
   reward?: string;
   type: string;
+  link?: string;
+  sign_up_link?: string;
   professor_id?: string;
   professor?: Professor;
   requirement_tags?: Tag[];

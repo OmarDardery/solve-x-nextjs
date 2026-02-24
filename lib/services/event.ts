@@ -71,19 +71,22 @@ export async function getEventsByOrganizationId(organizationId: bigint) {
 /**
  * Update an event
  */
-export async function updateEvent(
-  id: bigint,
-  updates: {
-    title?: string;
-    description?: string;
-    date?: string;
-    link?: string;
-    signUpLink?: string;
-  }
-) {
+export async function updateEvent(id: bigint, updates: any) {
+  // Normalize incoming keys: support both camelCase and snake_case from the API
+  const data: any = {};
+  console.log("updateEvent incoming updates:", updates);
+  if (updates.title !== undefined) data.title = updates.title;
+  if (updates.description !== undefined) data.description = updates.description;
+  if (updates.date !== undefined) data.date = updates.date;
+  if (updates.link !== undefined) data.link = updates.link;
+  // signUpLink may come as camelCase or snake_case (sign_up_link)
+  if (updates.signUpLink !== undefined) data.signUpLink = updates.signUpLink;
+  if (updates.sign_up_link !== undefined) data.signUpLink = updates.sign_up_link;
+  console.log("updateEvent normalized data:", data);
+
   const event = await prisma.event.update({
     where: { id },
-    data: updates,
+    data,
     include: {
       organization: true,
     },

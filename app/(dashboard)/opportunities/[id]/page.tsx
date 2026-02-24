@@ -33,12 +33,17 @@ export default function OpportunityDetailPage({
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeLink, setResumeLink] = useState("");
+  const [hasApplied, setHasApplied] = useState(false);
 
   const isStudent = session?.user?.role === USER_ROLES.STUDENT;
 
   useEffect(() => {
     fetchOpportunity();
   }, [id]);
+
+  useEffect(() => {
+    if (isStudent) checkIfApplied();
+  }, [isStudent, id]);
 
   const fetchOpportunity = async () => {
     try {
@@ -76,6 +81,19 @@ export default function OpportunityDetailPage({
       toast.error("Failed to submit application");
     } finally {
       setApplying(false);
+    }
+  };
+
+  const checkIfApplied = async () => {
+    try {
+      const apps = await applicationApi.getMyApplications();
+      const found = (apps || []).some((a: any) => {
+        const oppId = a.opportunity?.id || a.opportunity_id;
+        return oppId === id;
+      });
+      setHasApplied(found);
+    } catch (err) {
+      console.error("Failed to check applications:", err);
     }
   };
 
@@ -133,7 +151,9 @@ export default function OpportunityDetailPage({
               </h1>
             </div>
             {isStudent && (
-              <Button onClick={() => setShowApplyModal(true)}>Apply Now</Button>
+              <Button onClick={() => setShowApplyModal(true)} disabled={hasApplied}>
+                {hasApplied ? "Already Applied" : "Apply Now"}
+              </Button>
             )}
           </div>
 
@@ -141,7 +161,14 @@ export default function OpportunityDetailPage({
             {opportunity.professor && (
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                <span>{opportunity.professor.first_name} {opportunity.professor.last_name}</span>
+                <div>
+                  <div className="text-sm font-medium text-heading">
+                    {opportunity.professor.first_name} {opportunity.professor.last_name}
+                  </div>
+                  {opportunity.professor.email && (
+                    <div className="text-xs text-muted">{opportunity.professor.email}</div>
+                  )}
+                </div>
               </div>
             )}
             {opportunity.created_at && (
@@ -208,6 +235,7 @@ export default function OpportunityDetailPage({
         isOpen={showApplyModal}
         onClose={() => setShowApplyModal(false)}
         title={`Apply: ${opportunity.name}`}
+        className="p-6 sm:p-8"
       >
         <div className="space-y-4">
           <div>

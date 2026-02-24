@@ -36,7 +36,28 @@ export async function POST(request: Request) {
       sign_up_link
     );
 
-    return NextResponse.json(event, { status: 201 });
+    const transformed = {
+      id: event.id.toString(),
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      link: event.link || null,
+      sign_up_link: event.signUpLink || null,
+      organization_id: event.organizationId?.toString(),
+      organization: event.organization
+        ? {
+            id: event.organization.id.toString(),
+            name: event.organization.name,
+            email: event.organization.email,
+            contact: event.organization.contact,
+            link: event.organization.link,
+          }
+        : undefined,
+      created_at: event.createdAt?.toISOString() || new Date().toISOString(),
+      updated_at: event.updatedAt?.toISOString() || new Date().toISOString(),
+    };
+
+    return NextResponse.json(transformed, { status: 201 });
   } catch (error) {
     console.error("Create event error:", error);
     return NextResponse.json(

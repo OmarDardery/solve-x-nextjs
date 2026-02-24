@@ -74,6 +74,7 @@ export const OPPORTUNITY_TYPES = {
   RESEARCH: "research",
   PROJECT: "project",
   INTERNSHIP: "internship",
+  COMPETITION: "competition",
 } as const;
 
 export type OpportunityType =
