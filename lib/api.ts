@@ -192,6 +192,8 @@ export interface Opportunity {
   sign_up_link?: string;
   professor_id?: string;
   professor?: Professor;
+  student_id?: string;
+  student?: Student;
   requirement_tags?: Tag[];
   created_at: string;
   updated_at: string;
@@ -264,7 +266,16 @@ export const applicationApi = {
   },
 
   getMyApplications: async () => {
-    return fetchApi<Application[]>("/applications/me");
+    const res = await fetchApi<any>("/applications/me");
+    // Return the raw shaped response so callers can render Submitted vs Received
+    if (Array.isArray(res)) {
+      // Legacy backend: return as submitted with empty received
+      return { submitted: res as Application[], received: [] };
+    }
+    return {
+      submitted: Array.isArray(res.submitted) ? (res.submitted as Application[]) : [],
+      received: Array.isArray(res.received) ? (res.received as Application[]) : [],
+    } as { submitted: Application[]; received: Application[] };
   },
 
   getForOpportunity: async (opportunityId: string) => {

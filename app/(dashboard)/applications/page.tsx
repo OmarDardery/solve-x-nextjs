@@ -16,7 +16,11 @@ import { USER_ROLES, APPLICATION_STATUS } from "@/lib/types";
 export default function ApplicationsPage() {
   const { data: session } = useSession();
   const userRole = session?.user?.role;
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [submitted, setSubmitted] = useState<Application[]>([]);
+  const [received, setReceived] = useState<Application[]>([]);
+  const [activeTab, setActiveTab] = useState<"submitted" | "received">(
+    userRole === USER_ROLES.PROFESSOR ? "received" : "submitted"
+  );
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -24,12 +28,19 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     fetchApplications();
-  }, [session]);
+  }, [session, userRole]);
+
+  // Ensure activeTab follows the current role when session/role changes
+  useEffect(() => {
+    setActiveTab(userRole === USER_ROLES.PROFESSOR ? "received" : "submitted");
+  }, [userRole]);
 
   const fetchApplications = async () => {
     try {
-      const appsData = await applicationApi.getMyApplications();
-      setApplications(appsData || []);
+      const res = await applicationApi.getMyApplications();
+      // res = { submitted, received }
+      setSubmitted(res.submitted || []);
+      setReceived(res.received || []);
     } catch (error) {
       console.error("Error fetching applications:", error);
       toast.error("Failed to fetch applications");
@@ -66,12 +77,26 @@ export default function ApplicationsPage() {
     return variants[status] || "default";
   };
 
+  const listToFilter = activeTab === "submitted" ? submitted : received;
   const filteredApplications =
     statusFilter === "all"
-      ? applications
-      : applications.filter((app) => app.status === statusFilter);
+      ? listToFilter
+      : listToFilter.filter((app) => app.status === statusFilter);
 
-  const canManageStatus = userRole === USER_ROLES.PROFESSOR || userRole === USER_ROLES.ORGANIZATION;
+  const canManageStatusFor = (app?: Application | null) => {
+    if (!app || !session?.user) return false;
+    // Only received applications (applications to your opportunities) may be modified
+    if (activeTab !== "received") return false;
+    const uid = session.user.id;
+    if (session.user.role === USER_ROLES.ORGANIZATION) return true;
+    if (session.user.role === USER_ROLES.PROFESSOR) {
+      return !!app.opportunity?.professor_id && app.opportunity.professor_id.toString() === uid;
+    }
+    if (session.user.role === USER_ROLES.STUDENT) {
+      return !!app.opportunity?.student_id && app.opportunity.student_id.toString() === uid;
+    }
+    return false;
+  };
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -86,16 +111,33 @@ export default function ApplicationsPage() {
               : "Manage applications"}
           </p>
         </div>
-        <Select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full sm:w-48"
-        >
-          <option value="all">All Statuses</option>
-          <option value={APPLICATION_STATUS.PENDING}>Pending</option>
-          <option value={APPLICATION_STATUS.ACCEPTED}>Accepted</option>
-          <option value={APPLICATION_STATUS.REJECTED}>Rejected</option>
-        </Select>
+        <div className="flex gap-3 items-center">
+          <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+            <button
+              onClick={() => setActiveTab("submitted")}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${activeTab === "submitted" ? "bg-white dark:bg-gray-900 text-primary" : "text-muted"}`}
+            >
+              Submitted
+            </button>
+            <button
+              onClick={() => setActiveTab("received")}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${activeTab === "received" ? "bg-white dark:bg-gray-900 text-primary" : "text-muted"}`}
+            >
+              Received
+            </button>
+          </div>
+
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-48"
+          >
+            <option value="all">All Statuses</option>
+            <option value={APPLICATION_STATUS.PENDING}>Pending</option>
+            <option value={APPLICATION_STATUS.ACCEPTED}>Accepted</option>
+            <option value={APPLICATION_STATUS.REJECTED}>Rejected</option>
+          </Select>
+        </div>
       </div>
 
       {loading ? (
@@ -201,7 +243,7 @@ export default function ApplicationsPage() {
 
             <div className="flex justify-end">
               <div className="flex gap-2">
-                {canManageStatus && selectedApp.status === "pending" && (
+                {canManageStatusFor(selectedApp) && selectedApp.status === "pending" && (
                   <>
                     <Button
                       size="sm"

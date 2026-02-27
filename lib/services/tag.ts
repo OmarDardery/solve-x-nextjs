@@ -21,6 +21,27 @@ export async function createTag(name: string, description?: string) {
 }
 
 /**
+ * Create a tag and associate it to a student (if provided).
+ * If the tag already exists, it will be returned and association to the student will be created.
+ */
+export async function createTagForStudent(studentId: bigint, name: string, description?: string) {
+  // Ensure tag exists (create if missing)
+  const tag = await createTag(name, description);
+
+  // Create association in student_tags (skip duplicates)
+  try {
+    await prisma.studentTags.createMany({
+      data: [{ studentId, tagId: tag.id }],
+      skipDuplicates: true,
+    } as any);
+  } catch (e) {
+    // ignore duplicate constraint errors or other issues
+  }
+
+  return tag;
+}
+
+/**
  * Get all tags
  */
 export async function getAllTags() {

@@ -46,7 +46,7 @@ export function ProfessorDashboard() {
   }
 
   const publishedOpportunities = opportunities
-  const pendingApplications = applications.filter((a) => a.status === 'pending')
+  const pendingApplications = (applications || []).filter((a) => a.status === 'pending')
 
   const stats = [
     {
@@ -69,7 +69,7 @@ export function ProfessorDashboard() {
     },
     {
       label: 'Total Applications',
-      value: applications.length,
+      value: (applications || []).length,
       icon: FileText,
       color: 'text-orange-500',
     },
@@ -139,7 +139,7 @@ export function ProfessorDashboard() {
           ) : (
             <div className="space-y-4">
               {publishedOpportunities.slice(0, 5).map((opportunity) => {
-                const oppApplications = applications.filter(a => a.opportunity_id === opportunity.ID)
+                const oppApplications = (applications || []).filter(a => a.opportunity_id === opportunity.ID)
                 return (
                   <div
                     key={opportunity.ID}
@@ -150,8 +150,8 @@ export function ProfessorDashboard() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-heading">{opportunity.name}</h3>
                           <Badge variant="success">Active</Badge>
-                          {applications.filter(a => a.opportunity_id === opportunity.ID).length > 0 && (
-                            <Badge variant="default">{applications.filter(a => a.opportunity_id === opportunity.ID).length} applications</Badge>
+                          {(applications || []).filter(a => a.opportunity_id === opportunity.ID).length > 0 && (
+                            <Badge variant="default">{(applications || []).filter(a => a.opportunity_id === opportunity.ID).length} applications</Badge>
                           )}
                         </div>
                         <p className="text-body mb-3 line-clamp-2">{opportunity.details}</p>
@@ -160,7 +160,7 @@ export function ProfessorDashboard() {
                           <span>•</span>
                           <span>{opportunity.requirement_tags?.length || 0} tags</span>
                           <span>•</span>
-                          <span>{applications.filter(a => a.opportunity_id === opportunity.ID && a.status === 'pending').length} pending</span>
+                          <span>{(applications || []).filter(a => a.opportunity_id === opportunity.ID && a.status === 'pending').length} pending</span>
                         </div>
                       </div>
                       <div className="flex gap-2 ml-4">
@@ -199,7 +199,7 @@ export function ProfessorDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {applications.slice(0, 5).map((application) => {
+              {(applications || []).slice(0, 5).map((application) => {
                 const getStatusBadge = (status) => {
                   const variants = {
                     pending: 'default',
@@ -209,7 +209,7 @@ export function ProfessorDashboard() {
                   return variants[status] || 'default'
                 }
                 return (
-                  <div
+                    <div
                     key={application.ID}
                     className="p-4 border rounded-lg border-default hover:border-brand transition-colors"
                   >

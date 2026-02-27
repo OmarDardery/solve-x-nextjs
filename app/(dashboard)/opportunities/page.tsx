@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { opportunityApi, applicationApi, type Opportunity } from "@/lib/api";
 import { USER_ROLES } from "@/lib/types";
+import { Modal } from "@/components/ui/Modal";
+import OpportunityForm from "@/components/forms/OpportunityForm";
 
 export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -21,6 +23,8 @@ export default function OpportunitiesPage() {
   const [appliedIds, setAppliedIds] = useState<Record<string, true>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
 
   useEffect(() => {
     fetchOpportunities();
@@ -77,9 +81,10 @@ export default function OpportunitiesPage() {
 
   const fetchMyApplications = async () => {
     try {
-      const apps = await applicationApi.getMyApplications();
+      const res = await applicationApi.getMyApplications();
+      const apps = res.submitted || [];
       const map: Record<string, true> = {};
-      (apps || []).forEach((a: any) => {
+      apps.forEach((a: any) => {
         const oppId = a.opportunity?.id || a.opportunity_id;
         if (oppId) map[oppId] = true;
       });
@@ -122,9 +127,43 @@ export default function OpportunitiesPage() {
               <option value="project">Project</option>
               <option value="internship">Internship</option>
             </Select>
+
+            <div>
+              {session?.user && (
+                <Button
+                  onClick={() => {
+                    setEditingOpportunity(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Opportunity
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingOpportunity ? "Edit Opportunity" : "Create Opportunity"}
+        size="lg"
+      >
+        <div className="p-4 sm:p-6">
+          <OpportunityForm
+            onSuccess={() => {
+              setIsModalOpen(false);
+              fetchOpportunities();
+              // Refresh user's applications list so applied badges update
+              fetchMyApplications();
+            }}
+            onCancel={() => setIsModalOpen(false)}
+          />
+        </div>
+      </Modal>
 
       {/* Opportunities List */}
       {loading ? (
@@ -177,15 +216,30 @@ export default function OpportunitiesPage() {
                 )}
 
                 <div className="pt-3 border-t" style={{ borderColor: "var(--card-border)" }}>
-                  <Button
-                    as={Link}
-                    href={`/opportunities/${opportunity.id}`}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full"
-                  >
-                    View Details
-                  </Button>
+                  {/* If current user is owner, show View Applications button */}
+                  {session?.user && ((session.user.role === USER_ROLES.PROFESSOR && opportunity.professor_id && opportunity.professor_id.toString() === session.user.id) || (session.user.role === USER_ROLES.STUDENT && opportunity.student_id && opportunity.student_id.toString() === session.user.id)) ? (
+                    <Button
+                      onClick={async () => {
+                        // Navigate to detail page where owner can view applications
+                        window.location.href = `/opportunities/${opportunity.id}?view=applications`;
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      View Applications
+                    </Button>
+                  ) : (
+                    <Button
+                      as={Link}
+                      href={`/opportunities/${opportunity.id}`}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                    >
+                      View Details
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

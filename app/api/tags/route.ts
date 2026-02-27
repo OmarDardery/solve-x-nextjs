@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createTag } from "@/lib/services/tag";
+import { createTag, createTagForStudent } from "@/lib/services/tag";
 
 // POST /api/tags - Create new tag (professor only)
 export async function POST(request: Request) {
@@ -10,12 +10,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "professor") {
-      return NextResponse.json(
-        { error: "Only professors can create tags" },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { name, description } = body;
@@ -27,7 +21,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const tag = await createTag(name, description);
+    // Allow both professors and students to create tags.
+    let tag;
+    if (session.user.role === "student") {
+      tag = await createTagForStudent(BigInt(session.user.id), name, description);
+    } else {
+      // professors and other roles create tags normally
+      tag = await createTag(name, description);
+    }
 
     return NextResponse.json(tag, { status: 201 });
   } catch (error) {

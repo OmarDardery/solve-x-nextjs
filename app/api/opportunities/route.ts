@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { createOpportunity, getAllOpportunities, OpportunityType } from "@/lib/services/opportunity";
+import { getAllOpportunities, createOpportunityByOwner } from "@/lib/services/opportunity";
 
 // GET /api/opportunities - Get all opportunities
 export async function GET() {
@@ -24,9 +24,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "professor") {
+    if (session.user.role !== "professor" && session.user.role !== "student") {
       return NextResponse.json(
-        { error: "Only professors can create opportunities" },
+        { error: "Only professors or students can create opportunities" },
         { status: 403 }
       );
     }
@@ -41,13 +41,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const opportunity = await createOpportunity(
+    // Create based on session role: professor -> professorId, student -> studentId
+    const ownerType = session.user.role === "professor" ? "professor" : "student";
+    const opportunity = await createOpportunityByOwner(
+      ownerType as "professor" | "student",
       BigInt(session.user.id),
       name,
       details || null,
       requirements || null,
       reward || null,
-      type as OpportunityType,
+      type,
       tag_ids
     );
 

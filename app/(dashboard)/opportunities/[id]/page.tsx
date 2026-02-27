@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   ArrowLeft,
@@ -34,16 +35,43 @@ export default function OpportunityDetailPage({
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeLink, setResumeLink] = useState("");
   const [hasApplied, setHasApplied] = useState(false);
+  const [showReceivedModal, setShowReceivedModal] = useState(false);
+  const [receivedApplications, setReceivedApplications] = useState<any[]>([]);
 
   const isStudent = session?.user?.role === USER_ROLES.STUDENT;
+  const isProfessor = session?.user?.role === USER_ROLES.PROFESSOR;
+  const isOwner = (() => {
+    const userId = session?.user?.id;
+    if (!userId) return false;
+    if (isProfessor && opportunity?.professor) return opportunity.professor.id?.toString() === userId;
+    if (isStudent && opportunity?.student) return opportunity.student.id?.toString() === userId;
+    return false;
+  })();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchOpportunity();
   }, [id]);
 
   useEffect(() => {
-    if (isStudent) checkIfApplied();
-  }, [isStudent, id]);
+    // If ?view=applications and user is owner, fetch received applications and open modal
+    const view = searchParams?.get?.("view");
+    if (view === "applications" && isOwner) {
+      (async () => {
+        try {
+          const apps = await applicationApi.getForOpportunity(id);
+          setReceivedApplications(apps || []);
+          setShowReceivedModal(true);
+        } catch (err) {
+          console.error("Failed to fetch received applications:", err);
+        }
+      })();
+    }
+  }, [searchParams, isOwner, id]);
+
+  useEffect(() => {
+    if (isStudent || isProfessor) checkIfApplied();
+  }, [isStudent, isProfessor, id]);
 
   const fetchOpportunity = async () => {
     try {
@@ -86,8 +114,9 @@ export default function OpportunityDetailPage({
 
   const checkIfApplied = async () => {
     try {
-      const apps = await applicationApi.getMyApplications();
-      const found = (apps || []).some((a: any) => {
+      const res = await applicationApi.getMyApplications();
+      const apps = res.submitted || [];
+      const found = apps.some((a: any) => {
         const oppId = a.opportunity?.id || a.opportunity_id;
         return oppId === id;
       });
@@ -102,6 +131,7 @@ export default function OpportunityDetailPage({
       research: "Research",
       project: "Project",
       internship: "Internship",
+      competition: "Competition",
     };
     return labels[type] || type;
   };
@@ -150,10 +180,16 @@ export default function OpportunityDetailPage({
                 {opportunity.name}
               </h1>
             </div>
-            {isStudent && (
-              <Button onClick={() => setShowApplyModal(true)} disabled={hasApplied}>
-                {hasApplied ? "Already Applied" : "Apply Now"}
+            {isOwner ? (
+              <Button onClick={() => router.push(`/opportunities/${opportunity.id}?view=applications`)}>
+                View Applications
               </Button>
+            ) : (
+              (isStudent || (isProfessor && opportunity.type === "research")) && (
+                <Button onClick={() => setShowApplyModal(true)} disabled={hasApplied}>
+                  {hasApplied ? "Already Applied" : "Apply Now"}
+                </Button>
+              )
             )}
           </div>
 
@@ -271,6 +307,39 @@ export default function OpportunityDetailPage({
               Submit Application
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Received Applications Modal (owner only) */}
+      <Modal
+        isOpen={showReceivedModal}
+        onClose={() => setShowReceivedModal(false)}
+        title={`Applications: ${opportunity.name}`}
+        size="lg"
+      >
+        <div className="space-y-4 p-4">
+          {receivedApplications.length === 0 ? (
+            <p className="text-muted">No applications yet.</p>
+          ) : (
+            receivedApplications.map((app) => (
+              <Card key={app.id}>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{app.student ? `${app.student.first_name} ${app.student.last_name}` : app.professor_applicant ? `${app.professor_applicant.first_name} ${app.professor_applicant.last_name}` : "Applicant"}</div>
+                      <div className="text-xs text-muted">Status: {app.status}</div>
+                    </div>
+                    <div className="text-right">
+                      {app.resume_link && (
+                        <a href={app.resume_link} target="_blank" rel="noreferrer" className="text-sm text-primary">View Resume</a>
+                      )}
+                    </div>
+                  </div>
+                  {app.message && <p className="mt-2 text-sm text-muted whitespace-pre-wrap">{app.message}</p>}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </Modal>
     </div>

@@ -39,8 +39,10 @@ export default function StudentDashboard() {
       }
 
       // Fetch applications submitted by this student
-      const appsData = await applicationApi.getMyApplications().catch(() => []);
-      setApplications(appsData || []);
+      const appsRes = await applicationApi
+        .getMyApplications()
+        .catch(() => ({ submitted: [], received: [] }));
+      setApplications(appsRes.submitted || []);
 
       // Fetch featured opportunities
       const oppsData = await publicApi.getOpportunities().catch(() => []);

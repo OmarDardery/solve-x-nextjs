@@ -6,6 +6,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ApplicantType {
+  STUDENT
+  PROFESSOR
+}
+
 model Student {
   id                  BigInt         @id @default(autoincrement())
   createdAt           DateTime?      @map("created_at") @db.Timestamptz(6)
@@ -17,6 +22,7 @@ model Student {
   password            String?
   lastChangedPassword DateTime?      @map("last_changed_password") @db.Timestamptz(6)
   applications        Application[]
+  opportunities       Opportunity[]
   coins               Coins?
   student_tags        StudentTags[]
   reports             WeeklyReport[]
@@ -36,6 +42,7 @@ model Professor {
   password            String?
   lastChangedPassword DateTime?      @map("last_changed_password") @db.Timestamptz(6)
   opportunities       Opportunity[]
+  submittedApplications Application[]
   receivedReports     WeeklyReport[] @relation("ReportRecipient")
 
   @@index([deletedAt], map: "idx_professors_deleted_at")
@@ -91,14 +98,16 @@ model Opportunity {
   createdAt        DateTime?         @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime?         @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?         @map("deleted_at") @db.Timestamptz(6)
-  professorId      BigInt            @map("professor_id")
+  professorId      BigInt?           @map("professor_id")
+  studentId        BigInt?           @map("student_id")
   name             String
   details          String?
   requirements     String?
   reward           String?
   type             String
   applications     Application[]
-  professor        Professor         @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "fk_opportunities_professor")
+  professor        Professor?        @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "fk_opportunities_professor")
+  student          Student?          @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_opportunities_student")
   opportunity_tags OpportunityTags[]
 
   @@index([deletedAt], map: "idx_opportunities_deleted_at")
@@ -110,13 +119,16 @@ model Application {
   createdAt     DateTime?   @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime?   @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt     DateTime?   @map("deleted_at") @db.Timestamptz(6)
-  studentId     BigInt      @map("student_id")
+  studentId     BigInt?     @map("student_id")
+  professorApplicantId BigInt? @map("professor_id")
   opportunityId BigInt      @map("opportunity_id")
   message       String?
   resumeLink    String?     @map("resume_link")
   status        String      @default("pending")
+  applicantType String @map("applicant_type") @default("STUDENT")
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade, map: "fk_applications_opportunity")
-  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_applications_student")
+  student       Student?    @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "fk_applications_student")
+  professorApplicant Professor? @relation(fields: [professorApplicantId], references: [id], onDelete: Cascade, map: "fk_applications_professor_applicant")
 
   @@index([deletedAt], map: "idx_applications_deleted_at")
   @@map("applications")

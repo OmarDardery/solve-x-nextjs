@@ -240,6 +240,7 @@ export default function OpportunityForm({
           <option value={OPPORTUNITY_TYPES.RESEARCH}>Research</option>
           <option value={OPPORTUNITY_TYPES.PROJECT}>Project</option>
           <option value={OPPORTUNITY_TYPES.INTERNSHIP}>Internship</option>
+          <option value={OPPORTUNITY_TYPES.COMPETITION}>Competition</option>
         </Select>
 
         {/* Tags Section */}

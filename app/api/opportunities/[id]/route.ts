@@ -30,9 +30,9 @@ export async function PUT(request: Request, { params }: Props) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "professor") {
+    if (session.user.role !== "professor" && session.user.role !== "student") {
       return NextResponse.json(
-        { error: "Only professors can update opportunities" },
+        { error: "Only professors or students can update opportunities" },
         { status: 403 }
       );
     }
@@ -42,7 +42,9 @@ export async function PUT(request: Request, { params }: Props) {
 
     // Check ownership
     const opportunity = await getOpportunityById(opportunityId);
-    if (opportunity.professorId !== BigInt(session.user.id)) {
+    const sessionId = BigInt(session.user.id);
+    const oppAny: any = opportunity;
+    if (oppAny.professorId !== sessionId && oppAny.studentId !== sessionId) {
       return NextResponse.json(
         { error: "Cannot modify opportunities you don't own" },
         { status: 403 }
@@ -70,9 +72,9 @@ export async function DELETE(_request: Request, { params }: Props) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "professor") {
+    if (session.user.role !== "professor" && session.user.role !== "student") {
       return NextResponse.json(
-        { error: "Only professors can delete opportunities" },
+        { error: "Only professors or students can delete opportunities" },
         { status: 403 }
       );
     }
@@ -82,7 +84,9 @@ export async function DELETE(_request: Request, { params }: Props) {
 
     // Check ownership
     const opportunity = await getOpportunityById(opportunityId);
-    if (opportunity.professorId !== BigInt(session.user.id)) {
+    const sessionId = BigInt(session.user.id);
+    const oppAny: any = opportunity;
+    if (oppAny.professorId !== sessionId && oppAny.studentId !== sessionId) {
       return NextResponse.json(
         { error: "Cannot delete opportunities you don't own" },
         { status: 403 }

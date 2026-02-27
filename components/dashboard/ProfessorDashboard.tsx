@@ -45,11 +45,13 @@ export default function ProfessorDashboard() {
       // Fetch professor's opportunities
       const oppsData = await opportunityApi.getMyOpportunities().catch(() => []);
 
-      // Fetch applications for professor's opportunities
-      const appsData = await applicationApi.getMyApplications().catch(() => []);
+      // Fetch applications for professor's opportunities (received)
+      const appsRes = await applicationApi
+        .getMyApplications()
+        .catch(() => ({ submitted: [], received: [] }));
 
       setOpportunities(oppsData || []);
-      setApplications(appsData || []);
+      setApplications(appsRes.received || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch data");

@@ -41,7 +41,7 @@ const navItems: NavItem[] = [
     label: "Applications",
     href: "/applications",
     icon: <FileText className="w-5 h-5" />,
-    roles: [USER_ROLES.STUDENT],
+    roles: [USER_ROLES.STUDENT, USER_ROLES.PROFESSOR],
   },
   {
     label: "Events",

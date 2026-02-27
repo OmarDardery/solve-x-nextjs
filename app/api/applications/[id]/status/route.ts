@@ -14,9 +14,10 @@ export async function PUT(request: Request, { params }: Props) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "professor") {
+    // Allow professors or students to update status, but only if they own the opportunity
+    if (session.user.role !== "professor" && session.user.role !== "student") {
       return NextResponse.json(
-        { error: "Only professors can update application status" },
+        { error: "Only professors or students can update application status" },
         { status: 403 }
       );
     }
@@ -24,9 +25,22 @@ export async function PUT(request: Request, { params }: Props) {
     const { id } = await params;
     const applicationId = BigInt(id);
 
-    // Get application and verify professor owns the opportunity
+    // Get application and verify requester owns the opportunity (professor -> professorId, student -> studentId)
     const application = await getApplicationById(applicationId);
-    if (application.opportunity.professorId !== BigInt(session.user.id)) {
+    const sessionIdBig = BigInt(session.user.id);
+    const opp: any = application.opportunity;
+
+    const isProfessorOwner = opp.professorId ? opp.professorId === sessionIdBig : false;
+    const isStudentOwner = opp.studentId ? opp.studentId === sessionIdBig : false;
+
+    if (session.user.role === "professor" && !isProfessorOwner) {
+      return NextResponse.json(
+        { error: "Cannot modify applications for opportunities you don't own" },
+        { status: 403 }
+      );
+    }
+
+    if (session.user.role === "student" && !isStudentOwner) {
       return NextResponse.json(
         { error: "Cannot modify applications for opportunities you don't own" },
         { status: 403 }

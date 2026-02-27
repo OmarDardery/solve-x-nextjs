@@ -18,13 +18,23 @@ export async function GET(
 
     const { id } = await params;
 
-    // Check if the opportunity exists and belongs to the professor
+    // Check if the opportunity exists and belongs to the requesting user (professor or student)
     const opportunity = await getOpportunityById(BigInt(id));
+    const sessionId = session.user.id;
+    const oppAny: any = opportunity;
 
-    if (
-      session.user.role === "professor" &&
-      opportunity.professorId.toString() !== session.user.id
-    ) {
+    // Allow access if requester is the professor owner or the student owner
+    const isProfessorOwner = oppAny.professorId ? oppAny.professorId.toString() === sessionId : false;
+    const isStudentOwner = oppAny.studentId ? oppAny.studentId.toString() === sessionId : false;
+
+    if (session.user.role === "professor" && !isProfessorOwner) {
+      return NextResponse.json(
+        { error: "You can only view applications for your own opportunities" },
+        { status: 403 }
+      );
+    }
+
+    if (session.user.role === "student" && !isStudentOwner) {
       return NextResponse.json(
         { error: "You can only view applications for your own opportunities" },
         { status: 403 }
@@ -33,20 +43,30 @@ export async function GET(
 
     const applications = await getApplicationsByOpportunityId(BigInt(id));
 
-    // Transform for API response
+    // Transform for API response (include both student and professor applicant fields)
     const transformed = applications.map((app: ApplicationWithRelations) => ({
       id: app.id.toString(),
-      student_id: app.studentId.toString(),
+      student_id: app.studentId ? app.studentId.toString() : null,
+      professor_applicant_id: app.professorApplicantId ? app.professorApplicantId.toString() : null,
       opportunity_id: app.opportunityId.toString(),
       status: app.status,
       message: app.message,
       resume_link: app.resumeLink,
+      applicant_type: app.applicantType,
       student: app.student
         ? {
             id: app.student.id.toString(),
             first_name: app.student.firstName,
             last_name: app.student.lastName,
             email: app.student.email,
+          }
+        : undefined,
+      professor_applicant: app.professorApplicant
+        ? {
+            id: app.professorApplicant.id.toString(),
+            first_name: app.professorApplicant.firstName,
+            last_name: app.professorApplicant.lastName,
+            email: app.professorApplicant.email,
           }
         : undefined,
       created_at: app.createdAt?.toISOString() || new Date().toISOString(),
