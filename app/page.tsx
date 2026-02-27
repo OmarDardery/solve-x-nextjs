@@ -6,6 +6,8 @@ import { Search, BookOpen, Users, TrendingUp, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const features = [
   {
@@ -36,7 +38,10 @@ const features = [
 
 export default function HomePage() {
   const { data: session } = useSession();
-
+  const router = useRouter();
+  useEffect(() => {
+  session && router.push("/dashboard");
+  }, [session, router]);
   return (
     <div className="min-h-screen page-bg">
       {/* Header */}
