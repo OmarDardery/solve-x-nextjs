@@ -124,6 +124,7 @@ export default function OpportunitiesPage() {
             >
               <option value="all">All Types</option>
               <option value="research">Research</option>
+              <option value="competition">Competition</option>
               <option value="project">Project</option>
               <option value="internship">Internship</option>
             </Select>
