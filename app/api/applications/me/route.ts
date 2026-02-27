@@ -53,6 +53,8 @@ export async function GET() {
         ? {
             id: app.opportunity.id.toString(),
             name: app.opportunity.name,
+            professor_id: app.opportunity.professorId ? app.opportunity.professorId.toString() : null,
+            student_id: app.opportunity.studentId ? app.opportunity.studentId.toString() : null,
             created_at: app.opportunity.createdAt?.toISOString() || null,
             professor: app.opportunity.professor
               ? {
