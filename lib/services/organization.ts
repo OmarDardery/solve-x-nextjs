@@ -121,6 +121,14 @@ export async function getOrganizationByEmail(email: string) {
 }
 
 /**
+ * Get organization by email or return null
+ */
+export async function getOrganizationByEmailSafe(email: string) {
+  const organization = await prisma.organization.findUnique({ where: { email } });
+  return organization || null;
+}
+
+/**
  * Update organization fields
  */
 export async function updateOrganization(

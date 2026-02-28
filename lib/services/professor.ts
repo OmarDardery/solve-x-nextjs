@@ -115,3 +115,11 @@ export async function professorEmailExists(email: string): Promise<boolean> {
   const professor = await prisma.professor.findUnique({ where: { email } });
   return !!professor;
 }
+
+/**
+ * Get professor by email or return null
+ */
+export async function getProfessorByEmail(email: string) {
+  const professor = await prisma.professor.findUnique({ where: { email } });
+  return professor || null;
+}

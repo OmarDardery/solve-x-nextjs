@@ -193,6 +193,12 @@ function LoginContent() {
               required
             />
 
+            <div className="flex justify-end mt-2">
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" className="w-full" disabled={loading || !role}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>

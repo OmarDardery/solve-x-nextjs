@@ -256,7 +256,11 @@ export default function OpportunityDetailPage({
               </h3>
               <div className="flex flex-wrap gap-2">
                 {opportunity.requirement_tags.map((tag, idx) => (
-                  <Badge key={idx} variant="default">
+                  <Badge
+                    key={idx}
+                    variant="default"
+                    className="rounded-full px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 text-muted"
+                  >
                     {tag.name}
                   </Badge>
                 ))}

@@ -140,3 +140,11 @@ export async function studentEmailExists(email: string): Promise<boolean> {
   const student = await prisma.student.findUnique({ where: { email } });
   return !!student;
 }
+
+/**
+ * Get student by email or return null
+ */
+export async function getStudentByEmail(email: string) {
+  const student = await prisma.student.findUnique({ where: { email } });
+  return student || null;
+}

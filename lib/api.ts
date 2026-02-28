@@ -67,10 +67,10 @@ export const authApi = {
     });
   },
 
-  sendVerificationCode: async (email: string) => {
+  sendVerificationCode: async (email: string, role?: string, purpose?: string) => {
     return fetchApi<{ message: string }>("/auth/send-code", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, role, purpose }),
     });
   },
 
@@ -78,6 +78,12 @@ export const authApi = {
     return fetchApi<{ valid: boolean }>("/auth/verify-code", {
       method: "POST",
       body: JSON.stringify({ email, code }),
+    });
+  },
+  resetPassword: async (email: string, role: string, code: string, password: string) => {
+    return fetchApi<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, role, code, password }),
     });
   },
 };
