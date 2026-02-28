@@ -16,16 +16,16 @@ export async function POST(req: Request) {
     };
 
     if (!email || !role || !code || !password) {
-      return NextResponse.json({ message: "Missing fields" }, { status: 400 });
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
     if (typeof password !== "string" || password.length < 8) {
-      return NextResponse.json({ message: "Password must be at least 8 characters" }, { status: 400 });
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
     const ok = await verifyCode(email.toLowerCase(), String(code));
     if (!ok) {
-      return NextResponse.json({ message: "Invalid or expired code" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 });
     }
 
     // Use role to find user and update password via existing service helpers.
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       }
       await updateOrganization(org.id, { password });
     } else {
-      return NextResponse.json({ message: "Invalid role" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
     // Optionally sign-in programmatically and return the same response shape as sign-in.
@@ -61,6 +61,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "If that account exists, the password was reset" });
   } catch (err) {
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

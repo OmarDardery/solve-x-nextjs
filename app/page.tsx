@@ -143,28 +143,6 @@ export default function HomePage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t py-8" style={{ borderColor: "var(--card-border)" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Logo width={100} height={32} />
-              <span className="text-muted text-sm">
-                © {new Date().getFullYear()} SolveX
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted">
-              <Link href="/opportunities" className="hover:text-heading transition-colors">
-                Opportunities
-              </Link>
-              <Link href="/events" className="hover:text-heading transition-colors">
-                Events
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
