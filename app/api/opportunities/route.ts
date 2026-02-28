@@ -6,7 +6,41 @@ import { getAllOpportunities, createOpportunityByOwner } from "@/lib/services/op
 export async function GET() {
   try {
     const opportunities = await getAllOpportunities();
-    return NextResponse.json(opportunities);
+    const mapOpp = (opp: any) => ({
+      id: opp.id?.toString(),
+      name: opp.name,
+      details: opp.details,
+      requirements: opp.requirements,
+      reward: opp.reward,
+      type: opp.type,
+      link: opp.link,
+      sign_up_link: opp.signUpLink || opp.sign_up_link || null,
+      professor_id: opp.professorId ? String(opp.professorId) : null,
+      professor: opp.professor
+        ? {
+            id: opp.professor.id?.toString(),
+            first_name: opp.professor.firstName,
+            last_name: opp.professor.lastName,
+            email: opp.professor.email,
+          }
+        : undefined,
+      student_id: opp.studentId ? String(opp.studentId) : null,
+      student: opp.student
+        ? {
+            id: opp.student.id?.toString(),
+            first_name: opp.student.firstName,
+            last_name: opp.student.lastName,
+            email: opp.student.email,
+          }
+        : undefined,
+      requirement_tags: Array.isArray(opp.opportunity_tags)
+        ? opp.opportunity_tags.map((ot: any) => ({ id: ot.tags.id?.toString(), name: ot.tags.name }))
+        : [],
+      created_at: opp.createdAt?.toISOString(),
+      updated_at: opp.updatedAt?.toISOString(),
+    });
+
+    return NextResponse.json(opportunities.map(mapOpp));
   } catch (error) {
     console.error("Get opportunities error:", error);
     return NextResponse.json(

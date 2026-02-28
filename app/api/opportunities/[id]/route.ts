@@ -15,7 +15,42 @@ export async function GET(_request: Request, { params }: Props) {
   try {
     const { id } = await params;
     const opportunity = await getOpportunityById(BigInt(id));
-    return NextResponse.json(opportunity);
+    const opp: any = opportunity;
+    const mapped = {
+      id: opp.id?.toString(),
+      name: opp.name,
+      details: opp.details,
+      requirements: opp.requirements,
+      reward: opp.reward,
+      type: opp.type,
+      link: opp.link,
+      sign_up_link: opp.signUpLink || opp.sign_up_link || null,
+      professor_id: opp.professorId ? String(opp.professorId) : null,
+      professor: opp.professor
+        ? {
+            id: opp.professor.id?.toString(),
+            first_name: opp.professor.firstName,
+            last_name: opp.professor.lastName,
+            email: opp.professor.email,
+          }
+        : undefined,
+      student_id: opp.studentId ? String(opp.studentId) : null,
+      student: opp.student
+        ? {
+            id: opp.student.id?.toString(),
+            first_name: opp.student.firstName,
+            last_name: opp.student.lastName,
+            email: opp.student.email,
+          }
+        : undefined,
+      requirement_tags: Array.isArray(opp.opportunity_tags)
+        ? opp.opportunity_tags.map((ot: any) => ({ id: ot.tags.id?.toString(), name: ot.tags.name }))
+        : [],
+      created_at: opp.createdAt?.toISOString(),
+      updated_at: opp.updatedAt?.toISOString(),
+    };
+
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error("Get opportunity error:", error);
     return NextResponse.json({ error: "Opportunity not found" }, { status: 404 });
