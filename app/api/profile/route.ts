@@ -15,7 +15,51 @@ export async function GET() {
 
     const { user, role } = await getCurrentUser(session);
 
-    return NextResponse.json({ ...user, role });
+    // Normalize fields to snake_case for frontend consistency
+    let transformed: any = { role };
+
+    const u: any = user;
+
+    switch (role) {
+      case "student":
+        transformed = {
+          ...transformed,
+          id: u.id?.toString ? u.id.toString() : String(u.id),
+          first_name: u.firstName || u.first_name || "",
+          last_name: u.lastName || u.last_name || "",
+          email: u.email || null,
+          created_at: u.createdAt ? u.createdAt.toISOString() : null,
+          updated_at: u.updatedAt ? u.updatedAt.toISOString() : null,
+        };
+        break;
+      case "professor":
+        transformed = {
+          ...transformed,
+          id: u.id?.toString ? u.id.toString() : String(u.id),
+          first_name: u.firstName || u.first_name || "",
+          last_name: u.lastName || u.last_name || "",
+          email: u.email || null,
+          created_at: u.createdAt ? u.createdAt.toISOString() : null,
+          updated_at: u.updatedAt ? u.updatedAt.toISOString() : null,
+        };
+        break;
+      case "organization":
+        transformed = {
+          ...transformed,
+          id: u.id?.toString ? u.id.toString() : String(u.id),
+          name: u.name || null,
+          email: u.email || null,
+          contact: u.contact || null,
+          link: u.link || null,
+          created_at: u.createdAt ? u.createdAt.toISOString() : null,
+          updated_at: u.updatedAt ? u.updatedAt.toISOString() : null,
+        };
+        break;
+      default:
+        transformed = { role, ...(u || {}) };
+    }
+
+    return NextResponse.json(transformed);
   } catch (error) {
     console.error("Profile error:", error);
     return NextResponse.json(

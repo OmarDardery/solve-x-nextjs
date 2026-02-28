@@ -36,7 +36,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     if (!session?.user) return;
-
+    
     try {
       let data;
       switch (userRole) {
@@ -120,9 +120,23 @@ export default function ProfilePage() {
     );
   }
 
-  const displayName = userRole === USER_ROLES.ORGANIZATION 
-    ? profile.name || session?.user?.name 
-    : `${profile.first_name} ${profile.last_name}`.trim() || session?.user?.name;
+  const displayName = (() => {
+    if (userRole === USER_ROLES.ORGANIZATION) {
+      return (
+        profile.name ||
+        session?.user?.name ||
+        // fallback to camelCase or snake_case just in case
+        (session as any)?.user?.firstName ||
+        (session as any)?.user?.first_name ||
+        "Organization"
+      );
+    }
+
+    const first = profile.first_name || (session as any)?.user?.firstName || (session as any)?.user?.first_name || "";
+    const last = profile.last_name || (session as any)?.user?.lastName || (session as any)?.user?.last_name || "";
+    const combined = `${first} ${last}`.trim();
+    return combined || session?.user?.name || "User";
+  })();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
