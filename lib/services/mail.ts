@@ -42,7 +42,6 @@ export async function sendVerificationEmail(to: string, code: string) {
   const text = `Your verification code is: ${code}`;
   const html = `<p>Your verification code is: <b>${code}</b></p>`;
 
-  console.log("📨 [Mail Service] Sending verification email with code:", code.substring(0, 2) + "****");
   return sendViaResend(to, subject, text, html);
 }
 
@@ -56,6 +55,5 @@ export async function sendNotificationEmail(
 ) {
   const html = `<p>${content}</p>`;
 
-  console.log("📨 [Mail Service] Sending notification email:", subject);
   return sendViaResend(to, subject, content, html);
 }

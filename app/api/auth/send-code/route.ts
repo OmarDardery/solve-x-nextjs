@@ -69,6 +69,13 @@ export async function POST(request: Request) {
             { status: 409 }
           );
         }
+        // For password reset, check if user exists
+        if (purpose === "reset" && !(await studentEmailExists(email))) {
+          return NextResponse.json(
+            { error: "No account found with this email address" },
+            { status: 404 }
+          );
+        }
         break;
 
       case "professor":
@@ -85,6 +92,13 @@ export async function POST(request: Request) {
             { status: 409 }
           );
         }
+        // For password reset, check if user exists
+        if (purpose === "reset" && !(await professorEmailExists(email))) {
+          return NextResponse.json(
+            { error: "No account found with this email address" },
+            { status: 404 }
+          );
+        }
         break;
 
       case "organization":
@@ -94,6 +108,13 @@ export async function POST(request: Request) {
           return NextResponse.json(
             { error: "Email already registered" },
             { status: 409 }
+          );
+        }
+        // For password reset, check if user exists
+        if (purpose === "reset" && !(await organizationEmailExists(email))) {
+          return NextResponse.json(
+            { error: "No account found with this email address" },
+            { status: 404 }
           );
         }
         break;
@@ -110,7 +131,6 @@ export async function POST(request: Request) {
     storeCode(email, code);
 
     // Send verification email
-    console.log("🔐 [Auth] Sending verification code to:", email);
     await sendVerificationEmail(email, code);
 
     return NextResponse.json({ message: "Verification code sent successfully" });
