@@ -110,13 +110,16 @@ export async function POST(request: Request) {
     storeCode(email, code);
 
     // Send verification email
+    console.log("🔐 [Auth] Sending verification code to:", email);
     await sendVerificationEmail(email, code);
 
     return NextResponse.json({ message: "Verification code sent successfully" });
   } catch (error) {
-    console.error("Send code error:", error);
+    console.error("❌ [Auth] Send code error:", error);
+    // Include more details in development
+    const errorMessage = error instanceof Error ? error.message : "Failed to send verification code";
     return NextResponse.json(
-      { error: "Failed to send verification code" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

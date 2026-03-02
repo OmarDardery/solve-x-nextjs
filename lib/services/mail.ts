@@ -1,69 +1,37 @@
-import sgMail from "@sendgrid/mail";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const useSendGrid = process.env.MAIL_SERVICE !== "local";
-const senderEmail = process.env.SENDER_EMAIL || "noreply@solvex.com";
+const senderEmail = process.env.SENDER_EMAIL || "no-reply@solvex-eui.org";
 const senderName = "Solve-The-X";
 
-// Initialize SendGrid if needed
-if (useSendGrid && process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
-
-// Create SMTP transporter if needed
-const smtpTransporter = !useSendGrid
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_PORT === "465",
-      auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    })
-  : null;
+// Initialize Resend client
+const resendApiKey = process.env.RESEND_API_KEY || "";
+const resend = new Resend(resendApiKey);
 
 /**
- * Send email via SendGrid
+ * Send email via Resend with diagnostic logging
  */
-async function sendViaSendGrid(
-  to: string,
-  subject: string,
-  text: string,
-  html: string
-) {
-  await sgMail.send({
+async function sendViaResend(to: string, subject: string, text: string, html: string) {
+  console.log("📧 [Resend] Attempting to send email:", {
+    from: `${senderName} <${senderEmail}>`,
     to,
-    from: {
-      email: senderEmail,
-      name: senderName,
-    },
     subject,
-    text,
-    html,
   });
-}
 
-/**
- * Send email via SMTP
- */
-async function sendViaSMTP(
-  to: string,
-  subject: string,
-  text: string,
-  html: string
-) {
-  if (!smtpTransporter) {
-    throw new Error("SMTP transporter not configured");
+  try {
+    const result = await resend.emails.send({
+      from: `${senderName} <${senderEmail}>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+    });
+    
+    console.log("✅ [Resend] Email sent successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ [Resend] Email send failed:", error);
+    throw error;
   }
-
-  await smtpTransporter.sendMail({
-    from: `"${senderName}" <${senderEmail}>`,
-    to,
-    subject,
-    text,
-    html,
-  });
 }
 
 /**
@@ -74,10 +42,8 @@ export async function sendVerificationEmail(to: string, code: string) {
   const text = `Your verification code is: ${code}`;
   const html = `<p>Your verification code is: <b>${code}</b></p>`;
 
-  if (useSendGrid) {
-    return sendViaSendGrid(to, subject, text, html);
-  }
-  return sendViaSMTP(to, subject, text, html);
+  console.log("📨 [Mail Service] Sending verification email with code:", code.substring(0, 2) + "****");
+  return sendViaResend(to, subject, text, html);
 }
 
 /**
@@ -90,8 +56,6 @@ export async function sendNotificationEmail(
 ) {
   const html = `<p>${content}</p>`;
 
-  if (useSendGrid) {
-    return sendViaSendGrid(to, subject, content, html);
-  }
-  return sendViaSMTP(to, subject, content, html);
+  console.log("📨 [Mail Service] Sending notification email:", subject);
+  return sendViaResend(to, subject, content, html);
 }
