@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const senderEmail = process.env.SENDER_EMAIL || "no-reply@solvex-eui.org";
-const senderName = "Solve-The-X";
+const senderName = "SolveX";
 
 // Initialize Resend client
 const resendApiKey = process.env.RESEND_API_KEY || "";
