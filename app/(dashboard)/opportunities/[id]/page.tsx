@@ -185,7 +185,7 @@ export default function OpportunityDetailPage({
                 View Applications
               </Button>
             ) : (
-              (isStudent || (isProfessor && opportunity.type === "research")) && (
+              (isStudent || isProfessor) && (
                 <Button onClick={() => setShowApplyModal(true)} disabled={hasApplied}>
                   {hasApplied ? "Already Applied" : "Apply Now"}
                 </Button>

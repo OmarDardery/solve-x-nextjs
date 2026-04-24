@@ -21,11 +21,6 @@ export async function createApplication(
   const opportunity = await prisma.opportunity.findUnique({ where: { id: opportunityId } });
   if (!opportunity) throw new Error("Opportunity not found");
 
-  // Professors may only apply to research opportunities
-  if (applicantType === "PROFESSOR" && opportunity.type !== "research") {
-    throw new Error("Professors can only apply to research opportunities");
-  }
-
   // Check if application already exists for this applicant
   const existing = await prisma.application.findFirst({
     where: (applicantType === "STUDENT"
